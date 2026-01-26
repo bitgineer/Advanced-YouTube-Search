@@ -3834,29 +3834,179 @@
             }
         });
 
-        // Keyboard shortcuts for saved searches (Alt+1-9)
-        document.addEventListener('keydown', function(event) {
-            // Check if Alt key is pressed and a number key (1-9) is pressed
-            if (event.altKey && event.key >= '1' && event.key <= '9') {
-                event.preventDefault();
+        // ==================================================================
+        // KEYBOARD EVENT HANDLING SYSTEM
+        // ==================================================================
 
-                // Get the index (0-8) from the key (1-9)
-                const index = parseInt(event.key) - 1;
+        /**
+         * Debounce function to prevent rapid-fire execution
+         * @param {Function} func - The function to debounce
+         * @param {number} wait - The debounce wait time in milliseconds
+         * @returns {Function} Debounced function
+         */
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
 
-                // Get all saved searches
-                const result = getAllSearches();
+        /**
+         * Validate if a keyboard event should be processed
+         * Checks for browser conflicts and invalid combinations
+         * @param {KeyboardEvent} event - The keyboard event to validate
+         * @returns {boolean} True if event should be processed, false otherwise
+         */
+        function shouldProcessEvent(event) {
+            // Don't process if user is typing in an input field
+            const activeElement = document.activeElement;
+            const tag = activeElement ? activeElement.tagName.toLowerCase() : '';
+            const isInputField = tag === 'input' || tag === 'textarea' || tag === 'select';
 
-                if (result.success && index < result.data.length) {
-                    const search = result.data[index];
-
-                    // Show visual feedback
-                    showToast(`Executing: ${search.name}`, 'info', 1500);
-
-                    // Execute the saved search directly
-                    executeSavedSearch(search.id);
+            // Allow shortcuts in input fields only if explicitly marked as global
+            // Most shortcuts should not trigger when typing in form fields
+            if (isInputField) {
+                // Only allow certain shortcuts when focused on input
+                const allowedInInput = ['escape', 'enter'];
+                const key = event.key.toLowerCase();
+                if (!allowedInInput.includes(key) && event.target.id !== 'regularSearch') {
+                    return false;
                 }
             }
-        });
+
+            // Don't process if user is composing text (IME input)
+            if (event.isComposing) {
+                return false;
+            }
+
+            // Don't process if control key combinations that are browser defaults
+            const browserReservedCombos = [
+                { ctrl: true, key: 'w' },  // Close tab
+                { ctrl: true, key: 't' },  // New tab
+                { ctrl: true, key: 'l' },  // Focus address bar
+                { ctrl: true, key: 'd' },  // Bookmark page
+                { ctrl: true, shift: true, key: 't' },  // Reopen closed tab
+                { ctrl: true, shift: true, key: 'n' },  // New incognito window
+                { ctrl: true, shift: true, key: 'w' },  // Close window
+            ];
+
+            for (const combo of browserReservedCombos) {
+                if (combo.ctrl && !event.ctrlKey) continue;
+                if (combo.shift && !event.shiftKey) continue;
+                if (combo.alt && !event.altKey) continue;
+                if (combo.meta && !event.metaKey) continue;
+
+                const keyMatches = combo.key.toLowerCase() === event.key.toLowerCase();
+                const modifierMatches = (combo.ctrl === event.ctrlKey) &&
+                                   (combo.shift === event.shiftKey) &&
+                                   (combo.alt === event.altKey) &&
+                                   (combo.meta === event.metaKey);
+
+                if (keyMatches && modifierMatches) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /**
+         * Execute action based on keyboard shortcut
+         * @param {string} actionId - The ID of the action to execute
+         * @param {KeyboardEvent} event - The original keyboard event
+         */
+        function executeShortcutAction(actionId, event) {
+            try {
+                switch (actionId) {
+                    case 'focusSearch':
+                        event.preventDefault();
+                        const searchInput = document.getElementById('regularSearch');
+                        if (searchInput) {
+                            searchInput.focus();
+                            showToast('Search field focused', 'info', 1000);
+                        }
+                        break;
+
+                    case 'closePopup':
+                        event.preventDefault();
+                        const popup = document.getElementById('advancedSearchPopup');
+                        if (popup && popup.style.display !== 'none') {
+                            popup.style.display = 'none';
+                            showToast('Popup closed', 'info', 1000);
+                        }
+                        break;
+
+                    case 'executeSearch':
+                        const activeInput = document.activeElement;
+                        if (activeInput && activeInput.id === 'regularSearch') {
+                            // Allow normal form submission when in search field
+                            return;
+                        }
+                        event.preventDefault();
+                        const submitBtn = document.querySelector('form button[type="submit"]');
+                        if (submitBtn) {
+                            submitBtn.click();
+                        }
+                        break;
+
+                    default:
+                        // Handle saved search execution (executeSavedSearch1-9)
+                        if (actionId.startsWith('executeSavedSearch')) {
+                            const match = actionId.match(/executeSavedSearch(\d+)/);
+                            if (match) {
+                                const index = parseInt(match[1]) - 1;
+                                event.preventDefault();
+
+                                const result = getAllSearches();
+                                if (result.success && index < result.data.length) {
+                                    const search = result.data[index];
+                                    showToast(`Executing: ${search.name}`, 'info', 1500);
+                                    executeSavedSearch(search.id);
+                                } else {
+                                    showToast(`No saved search at position ${index + 1}`, 'error', 2000);
+                                }
+                            }
+                        }
+                        break;
+                }
+            } catch (error) {
+                console.error('Error executing shortcut action:', error);
+                showToast('Error executing shortcut', 'error', 2000);
+            }
+        }
+
+        /**
+         * Debounced shortcut handler
+         * Prevents rapid-fire execution of the same shortcut
+         */
+        const debouncedShortcutHandler = debounce(function(actionId, event) {
+            executeShortcutAction(actionId, event);
+        }, 100);
+
+        /**
+         * Global keyboard event listener for all shortcuts
+         * Handles all registered keyboard shortcuts with proper validation and debouncing
+         */
+        document.addEventListener('keydown', function(event) {
+            // Validate if the event should be processed
+            if (!shouldProcessEvent(event)) {
+                return;
+            }
+
+            // Find the action associated with this keyboard event
+            const action = KEYBOARD_SHORTCUTS.findActionForEvent(event);
+
+            // If an action was found, execute it
+            if (action) {
+                event.preventDefault();
+                debouncedShortcutHandler(action.actionId, event);
+            }
+        }, { passive: false });
 
     }
 
