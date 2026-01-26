@@ -284,6 +284,52 @@
     // ==================================================================
 
     /**
+     * Reserved browser shortcuts that should not be overridden
+     * Common browser shortcuts that would break native functionality
+     */
+    const RESERVED_BROWSER_SHORTCUTS = [
+        { key: 'Tab', modifiers: [], description: 'Tab navigation' },
+        { key: 'Escape', modifiers: ['ctrl'], description: 'Close browser tab' },
+        { key: 'F1', modifiers: [], description: 'Help' },
+        { key: 'F5', modifiers: [], description: 'Refresh' },
+        { key: 'F6', modifiers: [], description: 'Address bar' },
+        { key: 'F7', modifiers: [], description: 'Caret browsing' },
+        { key: 'F11', modifiers: [], description: 'Fullscreen' },
+        { key: 'F12', modifiers: [], description: 'DevTools' },
+        { key: 'c', modifiers: ['ctrl'], description: 'Copy' },
+        { key: 'v', modifiers: ['ctrl'], description: 'Paste' },
+        { key: 'x', modifiers: ['ctrl'], description: 'Cut' },
+        { key: 'a', modifiers: ['ctrl'], description: 'Select all' },
+        { key: 'z', modifiers: ['ctrl'], description: 'Undo' },
+        { key: 'z', modifiers: ['ctrl', 'shift'], description: 'Redo' },
+        { key: 'y', modifiers: ['ctrl'], description: 'Redo' },
+        { key: 's', modifiers: ['ctrl'], description: 'Save' },
+        { key: 'p', modifiers: ['ctrl'], description: 'Print' },
+        { key: 'f', modifiers: ['ctrl'], description: 'Find' },
+        { key: 'g', modifiers: ['ctrl'], description: 'Find next' },
+        { key: 'g', modifiers: ['ctrl', 'shift'], description: 'Find previous' },
+        { key: 'r', modifiers: ['ctrl'], description: 'Refresh' },
+        { key: 'n', modifiers: ['ctrl'], description: 'New window' },
+        { key: 't', modifiers: ['ctrl'], description: 'New tab' },
+        { key: 'w', modifiers: ['ctrl'], description: 'Close tab' },
+        { key: 'l', modifiers: ['ctrl'], description: 'Address bar' },
+        { key: 'd', modifiers: ['ctrl'], description: 'Bookmark' },
+        { key: 'j', modifiers: ['ctrl'], description: 'Downloads' },
+        { key: '+', modifiers: ['ctrl'], description: 'Zoom in' },
+        { key: '-', modifiers: ['ctrl'], description: 'Zoom out' },
+        { key: '0', modifiers: ['ctrl'], description: 'Reset zoom' },
+        { key: 'PageUp', modifiers: [], description: 'Page up' },
+        { key: 'PageDown', modifiers: [], description: 'Page down' },
+        { key: 'Home', modifiers: [], description: 'Home' },
+        { key: 'End', modifiers: [], description: 'End' },
+        { key: 'ArrowUp', modifiers: [], description: 'Scroll up' },
+        { key: 'ArrowDown', modifiers: [], description: 'Scroll down' },
+        { key: 'ArrowLeft', modifiers: [], description: 'Scroll left' },
+        { key: 'ArrowRight', modifiers: [], description: 'Scroll right' },
+        { key: ' ', modifiers: [], description: 'Page down (Space)' }
+    ];
+
+    /**
      * Keyboard Shortcuts Registry
      * Manages all keyboard shortcuts with conflict detection and customization support
      */
@@ -433,18 +479,46 @@
         },
 
         /**
-         * Check if a combo conflicts with existing shortcuts
+         * Check if a combo conflicts with reserved browser shortcuts
          */
-        hasConflict(combo, excludeActionId = null) {
+        isReservedShortcut(combo) {
+            return RESERVED_BROWSER_SHORTCUTS.some(reserved => {
+                return reserved.key.toLowerCase() === combo.key.toLowerCase() &&
+                       this.arraysEqual(reserved.modifiers, combo.modifiers);
+            });
+        },
+
+        /**
+         * Get reserved shortcut description if it exists
+         */
+        getReservedShortcutDescription(combo) {
+            const reserved = RESERVED_BROWSER_SHORTCUTS.find(r => {
+                return r.key.toLowerCase() === combo.key.toLowerCase() &&
+                       this.arraysEqual(r.modifiers, combo.modifiers);
+            });
+            return reserved ? reserved.description : null;
+        },
+
+        /**
+         * Find conflicting shortcut
+         */
+        findConflict(combo, excludeActionId = null) {
             const shortcuts = this.getAllShortcuts();
             
-            return shortcuts.some(shortcut => {
+            return shortcuts.find(shortcut => {
                 if (excludeActionId && shortcut.actionId === excludeActionId) return false;
                 
                 const existingCombo = shortcut.userCombo || shortcut.defaultCombo;
                 return existingCombo.key.toLowerCase() === combo.key.toLowerCase() &&
                        this.arraysEqual(existingCombo.modifiers, combo.modifiers);
             });
+        },
+
+        /**
+         * Check if a combo conflicts with existing shortcuts
+         */
+        hasConflict(combo, excludeActionId = null) {
+            return this.findConflict(combo, excludeActionId) !== undefined;
         },
 
         /**
@@ -3525,6 +3599,10 @@
             }
 
             shortcuts.forEach(shortcut => {
+                const activeCombo = KEYBOARD_SHORTCUTS.getActiveCombo(shortcut.actionId);
+                const isReserved = activeCombo && KEYBOARD_SHORTCUTS.isReservedShortcut(activeCombo);
+                const conflict = activeCombo ? KEYBOARD_SHORTCUTS.findConflict(activeCombo, shortcut.actionId) : null;
+
                 const shortcutItem = document.createElement('div');
                 shortcutItem.style.backgroundColor = '#fff';
                 shortcutItem.style.border = '1px solid #ddd';
@@ -3535,6 +3613,14 @@
                 shortcutItem.style.display = 'flex';
                 shortcutItem.style.justifyContent = 'space-between';
                 shortcutItem.style.alignItems = 'center';
+
+                if (isReserved) {
+                    shortcutItem.style.border = '2px solid #FFA500';
+                    shortcutItem.style.backgroundColor = '#fff8f0';
+                } else if (conflict) {
+                    shortcutItem.style.border = '2px solid #dc3545';
+                    shortcutItem.style.backgroundColor = '#fff0f0';
+                }
 
                 const shortcutInfo = document.createElement('div');
                 shortcutInfo.style.flex = '1';
@@ -3550,7 +3636,15 @@
                 shortcutCategory.style.fontSize = '12px';
                 shortcutCategory.style.color = '#666';
                 
-                if (!shortcut.isCustomizable) {
+                if (isReserved) {
+                    shortcutCategory.innerHTML = '⚠️ Reserved browser shortcut';
+                    shortcutCategory.style.color = '#FFA500';
+                    shortcutCategory.style.fontWeight = 'bold';
+                } else if (conflict) {
+                    shortcutCategory.innerHTML = `⚠️ Conflicts with "${conflict.displayName}"`;
+                    shortcutCategory.style.color = '#dc3545';
+                    shortcutCategory.style.fontWeight = 'bold';
+                } else if (!shortcut.isCustomizable) {
                     shortcutCategory.innerHTML = '🔒 Built-in (cannot customize)';
                     shortcutCategory.style.color = '#999';
                 } else {
@@ -3565,19 +3659,30 @@
                 shortcutControls.style.alignItems = 'center';
                 shortcutControls.style.gap = '10px';
 
-                const activeCombo = KEYBOARD_SHORTCUTS.getActiveCombo(shortcut.actionId);
                 const comboDisplay = document.createElement('div');
                 comboDisplay.style.padding = '6px 12px';
-                comboDisplay.style.backgroundColor = '#f0f0f0';
                 comboDisplay.style.border = '1px solid #ccc';
                 comboDisplay.style.borderRadius = '4px';
                 comboDisplay.style.fontSize = '14px';
                 comboDisplay.style.fontFamily = 'monospace';
                 comboDisplay.style.fontWeight = 'bold';
-                comboDisplay.style.color = '#333';
                 comboDisplay.style.minWidth = '120px';
                 comboDisplay.style.textAlign = 'center';
                 comboDisplay.innerText = activeCombo ? KEYBOARD_SHORTCUTS.formatCombo(activeCombo) : 'None';
+
+                if (isReserved) {
+                    comboDisplay.style.backgroundColor = '#ffeaa7';
+                    comboDisplay.style.borderColor = '#FFA500';
+                    comboDisplay.style.color = '#d68910';
+                } else if (conflict) {
+                    comboDisplay.style.backgroundColor = '#ffebee';
+                    comboDisplay.style.borderColor = '#dc3545';
+                    comboDisplay.style.color = '#c62828';
+                } else {
+                    comboDisplay.style.backgroundColor = '#f0f0f0';
+                    comboDisplay.style.borderColor = '#ccc';
+                    comboDisplay.style.color = '#333';
+                }
 
                 if (shortcut.isCustomizable) {
                     comboDisplay.style.cursor = 'pointer';
@@ -3585,15 +3690,27 @@
 
                     comboDisplay.addEventListener('mouseenter', function() {
                         if (!isCapturingKey) {
-                            comboDisplay.style.backgroundColor = '#e0e0e0';
-                            comboDisplay.style.borderColor = '#999';
+                            comboDisplay.style.transform = 'scale(1.05)';
+                            if (!isReserved && !conflict) {
+                                comboDisplay.style.backgroundColor = '#e0e0e0';
+                                comboDisplay.style.borderColor = '#999';
+                            }
                         }
                     });
 
                     comboDisplay.addEventListener('mouseleave', function() {
                         if (!isCapturingKey || currentCaptureActionId !== shortcut.actionId) {
-                            comboDisplay.style.backgroundColor = '#f0f0f0';
-                            comboDisplay.style.borderColor = '#ccc';
+                            comboDisplay.style.transform = 'scale(1)';
+                            if (isReserved) {
+                                comboDisplay.style.backgroundColor = '#ffeaa7';
+                                comboDisplay.style.borderColor = '#FFA500';
+                            } else if (conflict) {
+                                comboDisplay.style.backgroundColor = '#ffebee';
+                                comboDisplay.style.borderColor = '#dc3545';
+                            } else {
+                                comboDisplay.style.backgroundColor = '#f0f0f0';
+                                comboDisplay.style.borderColor = '#ccc';
+                            }
                         }
                     });
 
@@ -3642,6 +3759,37 @@
                 shortcutItem.appendChild(shortcutControls);
                 shortcutsListContainer.appendChild(shortcutItem);
             });
+
+            const hasConflicts = shortcuts.some(s => {
+                const combo = KEYBOARD_SHORTCUTS.getActiveCombo(s.actionId);
+                return combo && (KEYBOARD_SHORTCUTS.isReservedShortcut(combo) || KEYBOARD_SHORTCUTS.hasConflict(combo, s.actionId));
+            });
+
+            if (hasConflicts && !document.getElementById('conflictWarningBanner')) {
+                const conflictBanner = document.createElement('div');
+                conflictBanner.id = 'conflictWarningBanner';
+                conflictBanner.style.backgroundColor = '#fff3cd';
+                conflictBanner.style.border = '1px solid #ffc107';
+                conflictBanner.style.borderRadius = '6px';
+                conflictBanner.style.padding = '10px';
+                conflictBanner.style.marginBottom = '15px';
+                conflictBanner.style.display = 'flex';
+                conflictBanner.style.alignItems = 'center';
+                conflictBanner.style.gap = '10px';
+                conflictBanner.innerHTML = `
+                    <span style="font-size: 18px;">⚠️</span>
+                    <span style="flex: 1;">
+                        <strong>Conflicts detected!</strong> Some shortcuts conflict with browser functionality or other actions. 
+                        Review the highlighted items above and update them as needed.
+                    </span>
+                `;
+                shortcutsListContainer.parentElement.insertBefore(conflictBanner, shortcutsListContainer);
+            } else if (!hasConflicts) {
+                const conflictBanner = document.getElementById('conflictWarningBanner');
+                if (conflictBanner) {
+                    conflictBanner.remove();
+                }
+            }
         }
 
         function startKeyCapture(actionId, displayElement) {
@@ -3671,6 +3819,71 @@
             }
 
             const combo = KEYBOARD_SHORTCUTS.eventToCombo(event);
+
+            const reservedDesc = KEYBOARD_SHORTCUTS.getReservedShortcutDescription(combo);
+            if (reservedDesc) {
+                const warningMsg = `⚠️ This shortcut (${KEYBOARD_SHORTCUTS.formatCombo(combo)}) is reserved for browser functionality: ${reservedDesc}. Using it may interfere with normal browser behavior. Do you want to continue?`;
+                if (!confirm(warningMsg)) {
+                    stopKeyCapture();
+                    refreshShortcutsList();
+                    return;
+                }
+            }
+
+            const conflictingShortcut = KEYBOARD_SHORTCUTS.findConflict(combo, currentCaptureActionId);
+            if (conflictingShortcut) {
+                const conflictMsg = `⚠️ This shortcut (${KEYBOARD_SHORTCUTS.formatCombo(combo)}) is already used for "${conflictingShortcut.displayName}".\n\nWhat would you like to do?`;
+                
+                const action = prompt(
+                    conflictMsg + '\n\n' +
+                    'Type "1" to Auto-assign new shortcut to old action\n' +
+                    'Type "2" to Override and replace old action\n' +
+                    'Type "3" to Cancel',
+                    '1'
+                );
+
+                if (action === '3' || action === null) {
+                    stopKeyCapture();
+                    refreshShortcutsList();
+                    showToast('Shortcut assignment cancelled', 'info');
+                    return;
+                }
+
+                if (action === '2') {
+                    try {
+                        KEYBOARD_SHORTCUTS.setCustomShortcut(currentCaptureActionId, combo);
+                        stopKeyCapture();
+                        refreshShortcutsList();
+                        showToast(`Shortcut updated! ${conflictingShortcut.displayName} will no longer use this key.`, 'success', 4000);
+                    } catch (error) {
+                        showToast(error.message, 'error', 3000);
+                        stopKeyCapture();
+                        refreshShortcutsList();
+                    }
+                    return;
+                }
+
+                if (action === '1') {
+                    const oldActionId = conflictingShortcut.actionId;
+                    try {
+                        KEYBOARD_SHORTCUTS.resetShortcut(oldActionId);
+                        KEYBOARD_SHORTCUTS.setCustomShortcut(currentCaptureActionId, combo);
+                        stopKeyCapture();
+                        refreshShortcutsList();
+                        showToast(`Success! ${conflictingShortcut.displayName} was reset to default shortcut.`, 'success', 4000);
+                    } catch (error) {
+                        showToast(error.message, 'error', 3000);
+                        stopKeyCapture();
+                        refreshShortcutsList();
+                    }
+                    return;
+                }
+
+                stopKeyCapture();
+                refreshShortcutsList();
+                showToast('Invalid choice. Shortcut assignment cancelled.', 'error');
+                return;
+            }
 
             try {
                 KEYBOARD_SHORTCUTS.setCustomShortcut(currentCaptureActionId, combo);

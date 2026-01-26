@@ -26,12 +26,12 @@ This phase implements a comprehensive keyboard shortcuts system with a settings 
   - Show visual feedback for active key capture mode
   - Include help text explaining modifier key usage
 
-- [ ] Add shortcut conflict detection and resolution:
-  - Validate new keybinding doesn't conflict with existing shortcuts
-  - Check against reserved browser shortcuts (prevent breaking native functionality)
-  - Show warning when conflict detected with existing custom shortcut
-  - Provide option to auto-reassign conflicting shortcut
-  - Highlight conflicts in settings modal UI
+- [x] Add shortcut conflict detection and resolution:
+   - Validate new keybinding doesn't conflict with existing shortcuts
+   - Check against reserved browser shortcuts (prevent breaking native functionality)
+   - Show warning when conflict detected with existing custom shortcut
+   - Provide option to auto-reassign conflicting shortcut
+   - Highlight conflicts in settings modal UI
 
 - [ ] Implement shortcut persistence and loading:
   - Add 'customShortcuts' object to localStorage structure
