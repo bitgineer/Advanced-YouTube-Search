@@ -187,6 +187,89 @@
             outline: none;
             box-shadow: var(--ays-shadow-focus);
         }
+        
+        /* Focus-Within State (for label highlighting) */
+        .ays-field-wrapper:focus-within label {
+            color: var(--ays-color-primary);
+            transition: color var(--ays-transition-fast);
+        }
+        
+        /* Error State */
+        .ays-field-error {
+            border-color: var(--ays-color-danger) !important;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
+            transition: all var(--ays-transition-base);
+        }
+        
+        .ays-field-error + label,
+        .ays-field-wrapper.ays-error label {
+            color: var(--ays-color-danger);
+            transition: color var(--ays-transition-fast);
+        }
+        
+        .ays-field-error:focus {
+            border-color: var(--ays-color-danger) !important;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15) !important;
+        }
+        
+        /* Success State */
+        .ays-field-success {
+            border-color: var(--ays-color-success) !important;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1) !important;
+            transition: all var(--ays-transition-base);
+        }
+        
+        .ays-field-success + label,
+        .ays-field-wrapper.ays-success label {
+            color: var(--ays-color-success);
+            transition: color var(--ays-transition-fast);
+        }
+        
+        .ays-field-success:focus {
+            border-color: var(--ays-color-success) !important;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15) !important;
+        }
+        
+        /* Disabled State */
+        .ays-field-disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: var(--ays-color-gray-100);
+            transition: all var(--ays-transition-base);
+        }
+        
+        .ays-field-disabled:focus {
+            box-shadow: none;
+            border-color: var(--ays-color-gray-300) !important;
+        }
+        
+        .ays-field-disabled + label,
+        .ays-field-wrapper.ays-disabled label {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transition: opacity var(--ays-transition-fast);
+        }
+        
+        /* Loading State (pulse animation) */
+        @keyframes ays-pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+        
+        .ays-field-loading {
+            animation: ays-pulse 1.5s ease-in-out infinite;
+            border-color: var(--ays-color-primary) !important;
+            transition: all var(--ays-transition-base);
+        }
+        
+        .ays-field-loading:focus {
+            border-color: var(--ays-color-primary) !important;
+            box-shadow: var(--ays-shadow-focus);
+        }
     `;
     
     // Inject the style tag into the document head
@@ -959,8 +1042,10 @@
 
         // Helper function to create form fields
         function createField(labelText, inputType, inputName, placeholder='', options=[]) {
-            const div = document.createElement('div');
-            div.style.marginBottom = 'var(--ays-spacing-md)';
+            const wrapper = document.createElement('div');
+            wrapper.className = 'ays-field-wrapper';
+            wrapper.style.marginBottom = 'var(--ays-spacing-md)';
+            wrapper.style.transition = 'all var(--ays-transition-base)';
 
             const label = document.createElement('label');
             label.innerText = labelText;
@@ -971,12 +1056,14 @@
             label.style.fontSize = 'var(--ays-font-size-sm)';
             label.style.color = 'var(--ays-color-gray-700)';
             label.style.fontFamily = 'var(--ays-font-family)';
+            label.style.transition = 'color var(--ays-transition-fast)';
 
             let input;
             if (inputType === 'select') {
                 input = document.createElement('select');
                 input.name = inputName;
                 input.id = inputName;
+                input.className = 'ays-input';
                 input.style.cursor = 'pointer';
 
                 // Add options based on select options provided
@@ -991,11 +1078,13 @@
                 input.type = 'date';
                 input.name = inputName;
                 input.id = inputName;
+                input.className = 'ays-input';
             } else {
                 input = document.createElement('input');
                 input.type = inputType;
                 input.name = inputName;
                 input.id = inputName;
+                input.className = 'ays-input';
                 input.placeholder = placeholder;
             }
 
@@ -1010,20 +1099,106 @@
             input.style.fontFamily = 'var(--ays-font-family)';
             input.style.backgroundColor = 'var(--ays-color-white)';
 
-            // Add focus effect with design system
+            wrapper.appendChild(label);
+            wrapper.appendChild(input);
+            
+            // Add focus effects to the input
+            addInputFocusEffects(input);
+            
+            return wrapper;
+        }
+
+        /**
+         * Set field error state with visual feedback
+         * @param {string} fieldId - The ID of the field to set as error
+         */
+        function setFieldError(fieldId) {
+            const input = document.getElementById(fieldId);
+            if (!input) return;
+            
+            input.classList.add('ays-field-error');
+            input.classList.remove('ays-field-success', 'ays-field-loading');
+        }
+
+        /**
+         * Set field success state with visual feedback
+         * @param {string} fieldId - The ID of the field to set as success
+         */
+        function setFieldSuccess(fieldId) {
+            const input = document.getElementById(fieldId);
+            if (!input) return;
+            
+            input.classList.add('ays-field-success');
+            input.classList.remove('ays-field-error', 'ays-field-loading');
+        }
+
+        /**
+         * Set field disabled state
+         * @param {string} fieldId - The ID of the field to disable
+         * @param {boolean} disabled - Whether to disable or enable
+         */
+        function setFieldDisabled(fieldId, disabled = true) {
+            const input = document.getElementById(fieldId);
+            if (!input) return;
+            
+            if (disabled) {
+                input.disabled = true;
+                input.classList.add('ays-field-disabled');
+            } else {
+                input.disabled = false;
+                input.classList.remove('ays-field-disabled');
+            }
+        }
+
+        /**
+         * Set field loading state with pulse animation
+         * @param {string} fieldId - The ID of the field to set as loading
+         * @param {boolean} loading - Whether to set loading or remove it
+         */
+        function setFieldLoading(fieldId, loading = true) {
+            const input = document.getElementById(fieldId);
+            if (!input) return;
+            
+            if (loading) {
+                input.classList.add('ays-field-loading');
+                input.classList.remove('ays-field-error', 'ays-field-success');
+            } else {
+                input.classList.remove('ays-field-loading');
+            }
+        }
+
+        /**
+         * Clear all visual states from a field
+         * @param {string} fieldId - The ID of the field to clear states from
+         */
+        function clearFieldState(fieldId) {
+            const input = document.getElementById(fieldId);
+            if (!input) return;
+            
+            input.classList.remove('ays-field-error', 'ays-field-success', 'ays-field-loading', 'ays-field-disabled');
+        }
+
+        /**
+         * Add focus effects to input elements
+         * @param {HTMLInputElement|HTMLSelectElement} input - The input element to add focus effects to
+         */
+        function addInputFocusEffects(input) {
             input.addEventListener('focus', function() {
-                input.style.borderColor = 'var(--ays-color-primary)';
-                input.style.boxShadow = 'var(--ays-shadow-focus)';
+                if (!input.classList.contains('ays-field-error') && 
+                    !input.classList.contains('ays-field-success') &&
+                    !input.classList.contains('ays-field-loading')) {
+                    input.style.borderColor = 'var(--ays-color-primary)';
+                    input.style.boxShadow = 'var(--ays-shadow-focus)';
+                }
             });
 
             input.addEventListener('blur', function() {
-                input.style.borderColor = 'var(--ays-color-gray-300)';
-                input.style.boxShadow = 'none';
+                if (!input.classList.contains('ays-field-error') && 
+                    !input.classList.contains('ays-field-success')) {
+                    input.style.borderColor = 'var(--ays-color-gray-300)';
+                    input.style.boxShadow = 'none';
+                }
             });
-
-            div.appendChild(label);
-            div.appendChild(input);
-            return div;
         }
 
         // === Regular Search Section ===
