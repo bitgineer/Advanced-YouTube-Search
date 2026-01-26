@@ -744,28 +744,29 @@
      */
     function applyButtonStyle(button, baseColor, hoverColor) {
         const originalColor = baseColor;
-        button.style.transition = 'all 0.2s ease';
+        button.style.transition = 'all var(--ays-transition-base)';
+        button.style.transformOrigin = 'center center';
 
         button.addEventListener('mouseenter', function() {
             button.style.backgroundColor = hoverColor;
-            button.style.transform = 'translateY(-1px)';
-            button.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+            button.style.transform = 'scale(1.02) translateY(-1px)';
+            button.style.boxShadow = 'var(--ays-shadow-md)';
         });
 
         button.addEventListener('mouseleave', function() {
             button.style.backgroundColor = originalColor;
-            button.style.transform = 'translateY(0)';
+            button.style.transform = 'scale(1) translateY(0)';
             button.style.boxShadow = '';
         });
 
         button.addEventListener('mousedown', function() {
-            button.style.transform = 'translateY(1px)';
-            button.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
+            button.style.transform = 'scale(0.98) translateY(1px)';
+            button.style.boxShadow = 'var(--ays-shadow-xs)';
         });
 
         button.addEventListener('mouseup', function() {
-            button.style.transform = 'translateY(-1px)';
-            button.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+            button.style.transform = 'scale(1.02) translateY(-1px)';
+            button.style.boxShadow = 'var(--ays-shadow-md)';
         });
     }
 
@@ -778,7 +779,9 @@
         if (show) {
             modal.style.display = 'block';
             modal.style.opacity = '0';
-            modal.style.transition = 'opacity 0.3s ease';
+            modal.style.transition = 'opacity var(--ays-transition-slow)';
+            modal.style.backdropFilter = 'blur(8px)';
+            modal.style.webkitBackdropFilter = 'blur(8px)';
 
             // Trigger reflow
             void modal.offsetWidth;
@@ -815,32 +818,33 @@
         toast.style.position = 'fixed';
         toast.style.bottom = '80px';
         toast.style.right = '20px';
-        toast.style.zIndex = '10000';
-        toast.style.padding = '12px 20px';
-        toast.style.borderRadius = '6px';
-        toast.style.color = '#fff';
-        toast.style.fontSize = '14px';
-        toast.style.fontWeight = 'bold';
-        toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+        toast.style.zIndex = 'var(--ays-z-toast)';
+        toast.style.padding = 'var(--ays-spacing-md) var(--ays-spacing-xl)';
+        toast.style.borderRadius = 'var(--ays-radius-md)';
+        toast.style.color = 'var(--ays-color-white)';
+        toast.style.fontSize = 'var(--ays-font-size-sm)';
+        toast.style.fontWeight = 'var(--ays-font-weight-bold)';
+        toast.style.fontFamily = 'var(--ays-font-family)';
+        toast.style.boxShadow = 'var(--ays-shadow-lg)';
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(20px)';
-        toast.style.transition = 'all 0.3s ease';
+        toast.style.transition = 'all var(--ays-transition-slow)';
         toast.style.maxWidth = '350px';
         toast.style.wordWrap = 'break-word';
 
         // Type-specific styles
         switch(type) {
             case 'success':
-                toast.style.backgroundColor = '#4CAF50';
+                toast.style.backgroundColor = 'var(--ays-color-success)';
                 toast.innerHTML = '✓ ' + message;
                 break;
             case 'error':
-                toast.style.backgroundColor = '#dc3545';
+                toast.style.backgroundColor = 'var(--ays-color-danger)';
                 toast.innerHTML = '✗ ' + message;
                 break;
             case 'info':
             default:
-                toast.style.backgroundColor = '#2196F3';
+                toast.style.backgroundColor = 'var(--ays-color-secondary)';
                 toast.innerHTML = 'ℹ ' + message;
                 break;
         }
@@ -872,19 +876,41 @@
         toggleButton.style.bottom = '20px';
         toggleButton.style.right = '20px';
         toggleButton.style.zIndex = '1000';
-        toggleButton.style.padding = '10px 15px';
-        toggleButton.style.backgroundColor = '#FF0000';
-        toggleButton.style.color = '#fff';
+        toggleButton.style.padding = 'var(--ays-spacing-md) var(--ays-spacing-lg)';
+        toggleButton.style.backgroundColor = 'var(--ays-color-primary)';
+        toggleButton.style.color = 'var(--ays-color-white)';
         toggleButton.style.border = 'none';
-        toggleButton.style.borderRadius = '4px';
+        toggleButton.style.borderRadius = 'var(--ays-radius-md)';
         toggleButton.style.cursor = 'pointer';
-        toggleButton.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
-        toggleButton.style.fontSize = '14px';
-        toggleButton.style.fontWeight = 'bold';
+        toggleButton.style.boxShadow = 'var(--ays-shadow-sm)';
+        toggleButton.style.fontSize = 'var(--ays-font-size-sm)';
+        toggleButton.style.fontWeight = 'var(--ays-font-weight-bold)';
+        toggleButton.style.fontFamily = 'var(--ays-font-family)';
+        toggleButton.style.transition = 'all var(--ays-transition-base)';
         toggleButton.title = 'Toggle Advanced YouTube Search';
 
-        // Apply hover effect
-        applyButtonStyle(toggleButton, '#FF0000', '#CC0000');
+        // Apply modern hover effect with scale transform
+        toggleButton.addEventListener('mouseenter', function() {
+            toggleButton.style.backgroundColor = 'var(--ays-color-primary-dark)';
+            toggleButton.style.transform = 'scale(1.05)';
+            toggleButton.style.boxShadow = 'var(--ays-shadow-md)';
+        });
+
+        toggleButton.addEventListener('mouseleave', function() {
+            toggleButton.style.backgroundColor = 'var(--ays-color-primary)';
+            toggleButton.style.transform = 'scale(1)';
+            toggleButton.style.boxShadow = 'var(--ays-shadow-sm)';
+        });
+
+        toggleButton.addEventListener('mousedown', function() {
+            toggleButton.style.transform = 'scale(0.98)';
+            toggleButton.style.boxShadow = 'var(--ays-shadow-xs)';
+        });
+
+        toggleButton.addEventListener('mouseup', function() {
+            toggleButton.style.transform = 'scale(1.05)';
+            toggleButton.style.boxShadow = 'var(--ays-shadow-md)';
+        });
 
         document.body.appendChild(toggleButton);
 
@@ -896,32 +922,36 @@
         popupDiv.style.left = '50%';
         popupDiv.style.transform = 'translateX(-50%)';
         popupDiv.style.width = '450px';
-        popupDiv.style.backgroundColor = '#f9f9f9';
-        popupDiv.style.border = '1px solid #ccc';
-        popupDiv.style.borderRadius = '8px';
-        popupDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+        popupDiv.style.maxWidth = 'calc(100vw - 40px)';
+        popupDiv.style.backgroundColor = 'var(--ays-color-white)';
+        popupDiv.style.border = '1px solid var(--ays-color-gray-300)';
+        popupDiv.style.borderRadius = 'var(--ays-radius-lg)';
+        popupDiv.style.boxShadow = 'var(--ays-shadow-lg)';
         popupDiv.style.padding = '0';
         popupDiv.style.zIndex = '1001';
         popupDiv.style.display = 'none'; // Initially hidden
         popupDiv.style.cursor = 'default';
+        popupDiv.style.fontFamily = 'var(--ays-font-family)';
+        popupDiv.style.transition = 'opacity var(--ays-transition-base)';
 
         // Create the popup header for dragging
         const popupHeader = document.createElement('div');
-        popupHeader.style.backgroundColor = '#FF0000';
-        popupHeader.style.color = '#fff';
-        popupHeader.style.padding = '10px';
+        popupHeader.style.backgroundColor = 'var(--ays-color-primary)';
+        popupHeader.style.color = 'var(--ays-color-white)';
+        popupHeader.style.padding = 'var(--ays-spacing-md)';
         popupHeader.style.cursor = 'move';
-        popupHeader.style.borderTopLeftRadius = '8px';
-        popupHeader.style.borderTopRightRadius = '8px';
-        popupHeader.style.fontSize = '16px';
-        popupHeader.style.fontWeight = 'bold';
+        popupHeader.style.borderTopLeftRadius = 'var(--ays-radius-lg)';
+        popupHeader.style.borderTopRightRadius = 'var(--ays-radius-lg)';
+        popupHeader.style.fontSize = 'var(--ays-font-size-lg)';
+        popupHeader.style.fontWeight = 'var(--ays-font-weight-bold)';
+        popupHeader.style.fontFamily = 'var(--ays-font-family)';
         popupHeader.innerText = 'Advanced YouTube Search';
 
         popupDiv.appendChild(popupHeader);
 
         // Create the form container
         const formContainer = document.createElement('div');
-        formContainer.style.padding = '15px';
+        formContainer.style.padding = 'var(--ays-spacing-xl)';
         popupDiv.appendChild(formContainer);
 
         // Create form element
@@ -930,20 +960,24 @@
         // Helper function to create form fields
         function createField(labelText, inputType, inputName, placeholder='', options=[]) {
             const div = document.createElement('div');
-            div.style.marginBottom = '12px';
+            div.style.marginBottom = 'var(--ays-spacing-md)';
 
             const label = document.createElement('label');
             label.innerText = labelText;
             label.htmlFor = inputName;
             label.style.display = 'block';
             label.style.marginBottom = '6px';
-            label.style.fontWeight = 'bold';
+            label.style.fontWeight = 'var(--ays-font-weight-bold)';
+            label.style.fontSize = 'var(--ays-font-size-sm)';
+            label.style.color = 'var(--ays-color-gray-700)';
+            label.style.fontFamily = 'var(--ays-font-family)';
 
             let input;
             if (inputType === 'select') {
                 input = document.createElement('select');
                 input.name = inputName;
                 input.id = inputName;
+                input.style.cursor = 'pointer';
 
                 // Add options based on select options provided
                 options.forEach(option => {
@@ -966,21 +1000,24 @@
             }
 
             input.style.width = '100%';
-            input.style.padding = '8px';
+            input.style.padding = 'var(--ays-spacing-sm)';
             input.style.boxSizing = 'border-box';
-            input.style.border = '1px solid #ccc';
-            input.style.borderRadius = '4px';
-            input.style.transition = 'border-color 0.2s ease, box-shadow 0.2s ease';
+            input.style.border = '1px solid var(--ays-color-gray-300)';
+            input.style.borderRadius = 'var(--ays-radius-sm)';
+            input.style.transition = 'all var(--ays-transition-base)';
             input.style.outline = 'none';
+            input.style.fontSize = 'var(--ays-font-size-sm)';
+            input.style.fontFamily = 'var(--ays-font-family)';
+            input.style.backgroundColor = 'var(--ays-color-white)';
 
-            // Add focus effect
+            // Add focus effect with design system
             input.addEventListener('focus', function() {
-                input.style.borderColor = '#FF0000';
-                input.style.boxShadow = '0 0 0 2px rgba(255,0,0,0.1)';
+                input.style.borderColor = 'var(--ays-color-primary)';
+                input.style.boxShadow = 'var(--ays-shadow-focus)';
             });
 
             input.addEventListener('blur', function() {
-                input.style.borderColor = '#ccc';
+                input.style.borderColor = 'var(--ays-color-gray-300)';
                 input.style.boxShadow = 'none';
             });
 
@@ -991,14 +1028,16 @@
 
         // === Regular Search Section ===
         const regularSearchSection = document.createElement('div');
-        regularSearchSection.style.marginBottom = '20px';
+        regularSearchSection.style.marginBottom = 'var(--ays-spacing-2xl)';
 
         const regularSearchTitle = document.createElement('h3');
         regularSearchTitle.innerText = 'Regular Search';
         regularSearchTitle.style.marginTop = '0';
-        regularSearchTitle.style.marginBottom = '10px';
-        regularSearchTitle.style.fontSize = '18px';
-        regularSearchTitle.style.color = '#333';
+        regularSearchTitle.style.marginBottom = 'var(--ays-spacing-md)';
+        regularSearchTitle.style.fontSize = 'var(--ays-font-size-xl)';
+        regularSearchTitle.style.color = 'var(--ays-color-gray-800)';
+        regularSearchTitle.style.fontWeight = 'var(--ays-font-weight-bold)';
+        regularSearchTitle.style.fontFamily = 'var(--ays-font-family)';
 
         regularSearchSection.appendChild(regularSearchTitle);
 
@@ -1014,9 +1053,11 @@
         const advancedSearchTitle = document.createElement('h3');
         advancedSearchTitle.innerText = 'Advanced Options';
         advancedSearchTitle.style.marginTop = '0';
-        advancedSearchTitle.style.marginBottom = '10px';
-        advancedSearchTitle.style.fontSize = '18px';
-        advancedSearchTitle.style.color = '#333';
+        advancedSearchTitle.style.marginBottom = 'var(--ays-spacing-md)';
+        advancedSearchTitle.style.fontSize = 'var(--ays-font-size-xl)';
+        advancedSearchTitle.style.color = 'var(--ays-color-gray-800)';
+        advancedSearchTitle.style.fontWeight = 'var(--ays-font-weight-bold)';
+        advancedSearchTitle.style.fontFamily = 'var(--ays-font-family)';
 
         advancedSearchSection.appendChild(advancedSearchTitle);
 
@@ -1047,17 +1088,19 @@
 
         // === Saved Searches Section ===
         const savedSearchesSection = document.createElement('div');
-        savedSearchesSection.style.marginTop = '15px';
-        savedSearchesSection.style.marginBottom = '15px';
-        savedSearchesSection.style.paddingTop = '15px';
-        savedSearchesSection.style.borderTop = '1px solid #ddd';
+        savedSearchesSection.style.marginTop = 'var(--ays-spacing-lg)';
+        savedSearchesSection.style.marginBottom = 'var(--ays-spacing-lg)';
+        savedSearchesSection.style.paddingTop = 'var(--ays-spacing-lg)';
+        savedSearchesSection.style.borderTop = '1px solid var(--ays-color-gray-300)';
 
         const savedSearchesTitle = document.createElement('h3');
         savedSearchesTitle.innerText = 'Saved Searches';
         savedSearchesTitle.style.marginTop = '0';
-        savedSearchesTitle.style.marginBottom = '10px';
-        savedSearchesTitle.style.fontSize = '18px';
-        savedSearchesTitle.style.color = '#333';
+        savedSearchesTitle.style.marginBottom = 'var(--ays-spacing-md)';
+        savedSearchesTitle.style.fontSize = 'var(--ays-font-size-xl)';
+        savedSearchesTitle.style.color = 'var(--ays-color-gray-800)';
+        savedSearchesTitle.style.fontWeight = 'var(--ays-font-weight-bold)';
+        savedSearchesTitle.style.fontFamily = 'var(--ays-font-family)';
 
         savedSearchesSection.appendChild(savedSearchesTitle);
 
@@ -1073,7 +1116,7 @@
         // Container for dropdown and load button
         const savedSearchesControls = document.createElement('div');
         savedSearchesControls.style.display = 'flex';
-        savedSearchesControls.style.gap = '10px';
+        savedSearchesControls.style.gap = 'var(--ays-spacing-md)';
 
         // Saved searches dropdown
         const savedSearchesDiv = document.createElement('div');
@@ -1084,17 +1127,24 @@
         savedSearchesLabel.htmlFor = 'savedSearchesSelect';
         savedSearchesLabel.style.display = 'block';
         savedSearchesLabel.style.marginBottom = '6px';
-        savedSearchesLabel.style.fontWeight = 'bold';
+        savedSearchesLabel.style.fontWeight = 'var(--ays-font-weight-bold)';
+        savedSearchesLabel.style.fontSize = 'var(--ays-font-size-sm)';
+        savedSearchesLabel.style.color = 'var(--ays-color-gray-700)';
+        savedSearchesLabel.style.fontFamily = 'var(--ays-font-family)';
 
         const savedSearchesSelect = document.createElement('select');
         savedSearchesSelect.id = 'savedSearchesSelect';
         savedSearchesSelect.name = 'savedSearchesSelect';
         savedSearchesSelect.style.width = '100%';
-        savedSearchesSelect.style.padding = '8px';
+        savedSearchesSelect.style.padding = 'var(--ays-spacing-sm)';
         savedSearchesSelect.style.boxSizing = 'border-box';
-        savedSearchesSelect.style.border = '1px solid #ccc';
-        savedSearchesSelect.style.borderRadius = '4px';
-        savedSearchesSelect.style.backgroundColor = '#fff';
+        savedSearchesSelect.style.border = '1px solid var(--ays-color-gray-300)';
+        savedSearchesSelect.style.borderRadius = 'var(--ays-radius-sm)';
+        savedSearchesSelect.style.backgroundColor = 'var(--ays-color-white)';
+        savedSearchesSelect.style.cursor = 'pointer';
+        savedSearchesSelect.style.fontSize = 'var(--ays-font-size-sm)';
+        savedSearchesSelect.style.fontFamily = 'var(--ays-font-family)';
+        savedSearchesSelect.style.transition = 'all var(--ays-transition-base)';
 
         // Add default option
         const defaultOption = document.createElement('option');
@@ -1109,19 +1159,41 @@
         const loadSearchBtn = document.createElement('button');
         loadSearchBtn.type = 'button';
         loadSearchBtn.innerText = 'Load';
-        loadSearchBtn.style.padding = '10px 20px';
-        loadSearchBtn.style.backgroundColor = '#4CAF50';
-        loadSearchBtn.style.color = '#fff';
+        loadSearchBtn.style.padding = 'var(--ays-spacing-md) var(--ays-spacing-xl)';
+        loadSearchBtn.style.backgroundColor = 'var(--ays-color-success)';
+        loadSearchBtn.style.color = 'var(--ays-color-white)';
         loadSearchBtn.style.border = 'none';
-        loadSearchBtn.style.borderRadius = '4px';
+        loadSearchBtn.style.borderRadius = 'var(--ays-radius-sm)';
         loadSearchBtn.style.cursor = 'pointer';
-        loadSearchBtn.style.fontSize = '14px';
-        loadSearchBtn.style.fontWeight = 'bold';
+        loadSearchBtn.style.fontSize = 'var(--ays-font-size-sm)';
+        loadSearchBtn.style.fontWeight = 'var(--ays-font-weight-bold)';
         loadSearchBtn.style.alignSelf = 'flex-end';
         loadSearchBtn.style.marginBottom = '2px';
+        loadSearchBtn.style.fontFamily = 'var(--ays-font-family)';
+        loadSearchBtn.style.transition = 'all var(--ays-transition-base)';
 
-        // Apply hover effect
-        applyButtonStyle(loadSearchBtn, '#4CAF50', '#45a049');
+        // Modern hover effect with scale transform
+        loadSearchBtn.addEventListener('mouseenter', function() {
+            loadSearchBtn.style.backgroundColor = 'var(--ays-color-success-dark)';
+            loadSearchBtn.style.transform = 'scale(1.05)';
+            loadSearchBtn.style.boxShadow = 'var(--ays-shadow-md)';
+        });
+
+        loadSearchBtn.addEventListener('mouseleave', function() {
+            loadSearchBtn.style.backgroundColor = 'var(--ays-color-success)';
+            loadSearchBtn.style.transform = 'scale(1)';
+            loadSearchBtn.style.boxShadow = 'var(--ays-shadow-sm)';
+        });
+
+        loadSearchBtn.addEventListener('mousedown', function() {
+            loadSearchBtn.style.transform = 'scale(0.98)';
+            loadSearchBtn.style.boxShadow = 'var(--ays-shadow-xs)';
+        });
+
+        loadSearchBtn.addEventListener('mouseup', function() {
+            loadSearchBtn.style.transform = 'scale(1.05)';
+            loadSearchBtn.style.boxShadow = 'var(--ays-shadow-md)';
+        });
 
         savedSearchesControls.appendChild(savedSearchesDiv);
         savedSearchesControls.appendChild(loadSearchBtn);
@@ -1283,19 +1355,41 @@
         const manageSearchesBtn = document.createElement('button');
         manageSearchesBtn.type = 'button';
         manageSearchesBtn.innerText = '⚙️ Manage Searches';
-        manageSearchesBtn.style.padding = '10px 20px';
-        manageSearchesBtn.style.backgroundColor = '#0066cc';
-        manageSearchesBtn.style.color = '#fff';
+        manageSearchesBtn.style.padding = 'var(--ays-spacing-md) var(--ays-spacing-xl)';
+        manageSearchesBtn.style.backgroundColor = 'var(--ays-color-secondary)';
+        manageSearchesBtn.style.color = 'var(--ays-color-white)';
         manageSearchesBtn.style.border = 'none';
-        manageSearchesBtn.style.borderRadius = '4px';
+        manageSearchesBtn.style.borderRadius = 'var(--ays-radius-sm)';
         manageSearchesBtn.style.cursor = 'pointer';
-        manageSearchesBtn.style.fontSize = '14px';
-        manageSearchesBtn.style.fontWeight = 'bold';
+        manageSearchesBtn.style.fontSize = 'var(--ays-font-size-sm)';
+        manageSearchesBtn.style.fontWeight = 'var(--ays-font-weight-bold)';
         manageSearchesBtn.style.width = '100%';
-        manageSearchesBtn.style.marginTop = '10px';
+        manageSearchesBtn.style.marginTop = 'var(--ays-spacing-md)';
+        manageSearchesBtn.style.fontFamily = 'var(--ays-font-family)';
+        manageSearchesBtn.style.transition = 'all var(--ays-transition-base)';
 
-        // Apply hover effect
-        applyButtonStyle(manageSearchesBtn, '#0066cc', '#0052a3');
+        // Modern hover effect with scale transform
+        manageSearchesBtn.addEventListener('mouseenter', function() {
+            manageSearchesBtn.style.backgroundColor = 'var(--ays-color-secondary-dark)';
+            manageSearchesBtn.style.transform = 'scale(1.02)';
+            manageSearchesBtn.style.boxShadow = 'var(--ays-shadow-md)';
+        });
+
+        manageSearchesBtn.addEventListener('mouseleave', function() {
+            manageSearchesBtn.style.backgroundColor = 'var(--ays-color-secondary)';
+            manageSearchesBtn.style.transform = 'scale(1)';
+            manageSearchesBtn.style.boxShadow = 'var(--ays-shadow-sm)';
+        });
+
+        manageSearchesBtn.addEventListener('mousedown', function() {
+            manageSearchesBtn.style.transform = 'scale(0.98)';
+            manageSearchesBtn.style.boxShadow = 'var(--ays-shadow-xs)';
+        });
+
+        manageSearchesBtn.addEventListener('mouseup', function() {
+            manageSearchesBtn.style.transform = 'scale(1.02)';
+            manageSearchesBtn.style.boxShadow = 'var(--ays-shadow-md)';
+        });
 
         form.appendChild(manageSearchesBtn);
 
@@ -1307,31 +1401,37 @@
         manageSearchesModal.style.left = '0';
         manageSearchesModal.style.width = '100%';
         manageSearchesModal.style.height = '100%';
-        manageSearchesModal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-        manageSearchesModal.style.zIndex = '2000';
+        manageSearchesModal.style.backgroundColor = 'var(--ays-glass-backdrop)';
+        manageSearchesModal.style.backdropFilter = 'blur(8px)';
+        manageSearchesModal.style.webkitBackdropFilter = 'blur(8px)';
+        manageSearchesModal.style.zIndex = 'var(--ays-z-modal)';
         manageSearchesModal.style.display = 'none';
         manageSearchesModal.style.overflow = 'auto';
+        manageSearchesModal.style.transition = 'opacity var(--ays-transition-slow)';
 
         const manageModalContent = document.createElement('div');
         manageModalContent.style.position = 'absolute';
         manageModalContent.style.top = '50%';
         manageModalContent.style.left = '50%';
         manageModalContent.style.transform = 'translate(-50%, -50%)';
-        manageModalContent.style.backgroundColor = '#f9f9f9';
-        manageModalContent.style.borderRadius = '8px';
-        manageModalContent.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-        manageModalContent.style.padding = '20px';
+        manageModalContent.style.backgroundColor = 'var(--ays-color-white)';
+        manageModalContent.style.borderRadius = 'var(--ays-radius-lg)';
+        manageModalContent.style.boxShadow = 'var(--ays-shadow-lg)';
+        manageModalContent.style.padding = 'var(--ays-spacing-2xl)';
         manageModalContent.style.width = '600px';
         manageModalContent.style.maxWidth = '90%';
         manageModalContent.style.maxHeight = '80vh';
         manageModalContent.style.overflow = 'auto';
+        manageModalContent.style.fontFamily = 'var(--ays-font-family)';
 
         const manageModalTitle = document.createElement('h3');
         manageModalTitle.innerText = 'Manage Saved Searches';
         manageModalTitle.style.marginTop = '0';
-        manageModalTitle.style.marginBottom = '15px';
-        manageModalTitle.style.fontSize = '18px';
-        manageModalTitle.style.color = '#333';
+        manageModalTitle.style.marginBottom = 'var(--ays-spacing-lg)';
+        manageModalTitle.style.fontSize = 'var(--ays-font-size-xl)';
+        manageModalTitle.style.color = 'var(--ays-color-gray-800)';
+        manageModalTitle.style.fontWeight = 'var(--ays-font-weight-bold)';
+        manageModalTitle.style.fontFamily = 'var(--ays-font-family)';
 
         // Folder filter container
         const folderFilterContainer = document.createElement('div');
@@ -1670,21 +1770,25 @@
         editSearchModal.style.left = '0';
         editSearchModal.style.width = '100%';
         editSearchModal.style.height = '100%';
-        editSearchModal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-        editSearchModal.style.zIndex = '2001';
+        editSearchModal.style.backgroundColor = 'var(--ays-glass-backdrop)';
+        editSearchModal.style.backdropFilter = 'blur(8px)';
+        editSearchModal.style.webkitBackdropFilter = 'blur(8px)';
+        editSearchModal.style.zIndex = 'var(--ays-z-modal)';
         editSearchModal.style.display = 'none';
+        editSearchModal.style.transition = 'opacity var(--ays-transition-slow)';
 
         const editModalContent = document.createElement('div');
         editModalContent.style.position = 'absolute';
         editModalContent.style.top = '50%';
         editModalContent.style.left = '50%';
         editModalContent.style.transform = 'translate(-50%, -50%)';
-        editModalContent.style.backgroundColor = '#f9f9f9';
-        editModalContent.style.borderRadius = '8px';
-        editModalContent.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-        editModalContent.style.padding = '20px';
+        editModalContent.style.backgroundColor = 'var(--ays-color-white)';
+        editModalContent.style.borderRadius = 'var(--ays-radius-lg)';
+        editModalContent.style.boxShadow = 'var(--ays-shadow-lg)';
+        editModalContent.style.padding = 'var(--ays-spacing-2xl)';
         editModalContent.style.width = '400px';
         editModalContent.style.maxWidth = '90%';
+        editModalContent.style.fontFamily = 'var(--ays-font-family)';
 
         const editModalTitle = document.createElement('h3');
         editModalTitle.innerText = 'Edit Saved Search';
@@ -1888,21 +1992,25 @@
         saveSearchModal.style.left = '0';
         saveSearchModal.style.width = '100%';
         saveSearchModal.style.height = '100%';
-        saveSearchModal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-        saveSearchModal.style.zIndex = '2000';
+        saveSearchModal.style.backgroundColor = 'var(--ays-glass-backdrop)';
+        saveSearchModal.style.backdropFilter = 'blur(8px)';
+        saveSearchModal.style.webkitBackdropFilter = 'blur(8px)';
+        saveSearchModal.style.zIndex = 'var(--ays-z-modal)';
         saveSearchModal.style.display = 'none';
+        saveSearchModal.style.transition = 'opacity var(--ays-transition-slow)';
 
         const modalContent = document.createElement('div');
         modalContent.style.position = 'absolute';
         modalContent.style.top = '50%';
         modalContent.style.left = '50%';
         modalContent.style.transform = 'translate(-50%, -50%)';
-        modalContent.style.backgroundColor = '#f9f9f9';
-        modalContent.style.borderRadius = '8px';
-        modalContent.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-        modalContent.style.padding = '20px';
+        modalContent.style.backgroundColor = 'var(--ays-color-white)';
+        modalContent.style.borderRadius = 'var(--ays-radius-lg)';
+        modalContent.style.boxShadow = 'var(--ays-shadow-lg)';
+        modalContent.style.padding = 'var(--ays-spacing-2xl)';
         modalContent.style.width = '350px';
         modalContent.style.maxWidth = '90%';
+        modalContent.style.fontFamily = 'var(--ays-font-family)';
 
         const modalTitle = document.createElement('h3');
         modalTitle.innerText = 'Save Search';
