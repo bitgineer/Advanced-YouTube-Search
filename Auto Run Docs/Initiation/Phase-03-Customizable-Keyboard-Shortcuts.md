@@ -40,12 +40,12 @@ This phase implements a comprehensive keyboard shortcuts system with a settings 
   - Handle migration when default shortcuts change in future updates
   - Validate shortcut data integrity on load
 
-- [ ] Add keyboard shortcuts help and documentation:
-  - Create shortcuts help dialog accessible via button in popup
-  - Display all active shortcuts in organized categories
-  - Show default vs custom shortcuts with visual indicator
-  - Add search/filter for shortcuts list
-  - Include visual keyboard guide showing modifier keys
+- [x] Add keyboard shortcuts help and documentation:
+   - Create shortcuts help dialog accessible via button in popup
+   - Display all active shortcuts in organized categories
+   - Show default vs custom shortcuts with visual indicator
+   - Add search/filter for shortcuts list
+   - Include visual keyboard guide showing modifier keys
 
 - [ ] Test keyboard shortcuts system:
   - Verify all default shortcuts work correctly

@@ -1775,8 +1775,44 @@
             keyboardShortcutsBtn.style.transform = 'scale(1)';
         });
 
+        const shortcutsHelpBtn = document.createElement('button');
+        shortcutsHelpBtn.type = 'button';
+        shortcutsHelpBtn.innerHTML = '📖';
+        shortcutsHelpBtn.style.background = 'none';
+        shortcutsHelpBtn.style.border = 'none';
+        shortcutsHelpBtn.style.cursor = 'pointer';
+        shortcutsHelpBtn.style.fontSize = '14px';
+        shortcutsHelpBtn.style.color = 'white';
+        shortcutsHelpBtn.style.padding = '2px 8px';
+        shortcutsHelpBtn.style.marginLeft = '5px';
+        shortcutsHelpBtn.style.transition = 'all 0.2s ease';
+        shortcutsHelpBtn.title = 'Keyboard Shortcuts Help';
+
+        shortcutsHelpBtn.addEventListener('mouseenter', function() {
+            shortcutsHelpBtn.style.opacity = '0.8';
+            shortcutsHelpBtn.style.transform = 'scale(1.1)';
+        });
+
+        shortcutsHelpBtn.addEventListener('mouseleave', function() {
+            shortcutsHelpBtn.style.opacity = '1';
+            shortcutsHelpBtn.style.transform = 'scale(1)';
+        });
+
+        shortcutsHelpBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openShortcutsHelpModal();
+        });
+
+        const headerButtons = document.createElement('div');
+        headerButtons.style.display = 'flex';
+        headerButtons.style.alignItems = 'center';
+        headerButtons.style.gap = '5px';
+
+        headerButtons.appendChild(keyboardShortcutsBtn);
+        headerButtons.appendChild(shortcutsHelpBtn);
+
         popupHeader.appendChild(popupTitle);
-        popupHeader.appendChild(keyboardShortcutsBtn);
+        popupHeader.appendChild(headerButtons);
 
         popupDiv.appendChild(popupHeader);
 
@@ -4032,7 +4068,396 @@
         });
 
         // ==================================================================
-        // END KEYBOARD SHORTCUTS SETTINGS MODAL
+        // KEYBOARD SHORTCUTS HELP MODAL
+        // ==================================================================
+        const shortcutsHelpModal = document.createElement('div');
+        shortcutsHelpModal.id = 'ays-shortcuts-help-modal';
+        shortcutsHelpModal.style.cssText = `
+            display: none;
+            position: fixed;
+            z-index: 2147483646;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+
+        const shortcutsHelpModalContent = document.createElement('div');
+        shortcutsHelpModalContent.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 750px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        `;
+
+        const shortcutsHelpModalHeader = document.createElement('div');
+        shortcutsHelpModalHeader.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px 12px 0 0;
+        `;
+
+        const shortcutsHelpModalTitle = document.createElement('h2');
+        shortcutsHelpModalTitle.style.cssText = `
+            margin: 0;
+            font-size: 24px;
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        `;
+        shortcutsHelpModalTitle.innerHTML = '⌨️ Keyboard Shortcuts';
+
+        const closeShortcutsHelpModalBtn = document.createElement('button');
+        closeShortcutsHelpModalBtn.type = 'button';
+        closeShortcutsHelpModalBtn.innerHTML = '✕';
+        closeShortcutsHelpModalBtn.style.cssText = `
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        closeShortcutsHelpModalBtn.addEventListener('mouseenter', function() {
+            closeShortcutsHelpModalBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+        });
+        closeShortcutsHelpModalBtn.addEventListener('mouseleave', function() {
+            closeShortcutsHelpModalBtn.style.backgroundColor = 'transparent';
+        });
+        closeShortcutsHelpModalBtn.addEventListener('click', function() {
+            animateModal(shortcutsHelpModal, false);
+        });
+
+        shortcutsHelpModalHeader.appendChild(shortcutsHelpModalTitle);
+        shortcutsHelpModalHeader.appendChild(closeShortcutsHelpModalBtn);
+
+        const shortcutsHelpModalBody = document.createElement('div');
+        shortcutsHelpModalBody.style.cssText = `
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        `;
+
+        const shortcutsSearchBox = document.createElement('input');
+        shortcutsSearchBox.type = 'text';
+        shortcutsSearchBox.placeholder = '🔍 Search shortcuts...';
+        shortcutsSearchBox.style.cssText = `
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease;
+        `;
+        shortcutsSearchBox.addEventListener('focus', function() {
+            shortcutsSearchBox.style.borderColor = '#667eea';
+        });
+        shortcutsSearchBox.addEventListener('blur', function() {
+            shortcutsSearchBox.style.borderColor = '#e5e7eb';
+        });
+
+        const shortcutsHelpContent = document.createElement('div');
+        shortcutsHelpContent.id = 'shortcuts-help-content';
+
+        const legendSection = document.createElement('div');
+        legendSection.style.cssText = `
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        `;
+
+        const legendTitle = document.createElement('h4');
+        legendTitle.style.cssText = `
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: #374151;
+            font-weight: 600;
+        `;
+        legendTitle.innerText = 'Modifier Keys Guide';
+
+        const legendContent = document.createElement('div');
+        legendContent.style.cssText = `
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        `;
+
+        const modifierKeys = [
+            { name: 'Ctrl / ⌘', desc: 'Control or Command' },
+            { name: 'Alt', desc: 'Alt key' },
+            { name: 'Shift', desc: 'Shift key' }
+        ];
+
+        modifierKeys.forEach(mod => {
+            const modifierItem = document.createElement('div');
+            modifierItem.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 13px;
+                color: #6b7280;
+            `;
+
+            const modifierKey = document.createElement('span');
+            modifierKey.style.cssText = `
+                background: white;
+                border: 1px solid #d1d5db;
+                border-radius: 4px;
+                padding: 4px 8px;
+                font-family: monospace;
+                font-weight: 600;
+                font-size: 12px;
+                color: #1f2937;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            `;
+            modifierKey.innerText = mod.name;
+
+            const modifierDesc = document.createElement('span');
+            modifierDesc.innerText = mod.desc;
+
+            modifierItem.appendChild(modifierKey);
+            modifierItem.appendChild(modifierDesc);
+            legendContent.appendChild(modifierItem);
+        });
+
+        legendSection.appendChild(legendTitle);
+        legendSection.appendChild(legendContent);
+
+        shortcutsHelpModalBody.appendChild(legendSection);
+        shortcutsHelpModalBody.appendChild(shortcutsSearchBox);
+        shortcutsHelpModalBody.appendChild(shortcutsHelpContent);
+
+        shortcutsHelpModalContent.appendChild(shortcutsHelpModalHeader);
+        shortcutsHelpModalContent.appendChild(shortcutsHelpModalBody);
+        shortcutsHelpModal.appendChild(shortcutsHelpModalContent);
+        document.body.appendChild(shortcutsHelpModal);
+
+        shortcutsHelpModal.addEventListener('click', (e) => {
+            if (e.target === shortcutsHelpModal) {
+                animateModal(shortcutsHelpModal, false);
+            }
+        });
+
+        shortcutsSearchBox.addEventListener('input', function() {
+            filterShortcutsHelp(this.value);
+        });
+
+        function openShortcutsHelpModal() {
+            renderShortcutsHelp();
+            shortcutsHelpModal.style.display = 'block';
+            animateModal(shortcutsHelpModal, true);
+        }
+
+        function renderShortcutsHelp(filter = '') {
+            shortcutsHelpContent.innerHTML = '';
+            const allShortcuts = KEYBOARD_SHORTCUTS.getAllShortcuts();
+
+            const categories = {
+                'Saved Searches': allShortcuts.filter(s => s.id.startsWith('savedSearch')),
+                'Navigation': allShortcuts.filter(s => s.id === 'focusSearch' || s.id === 'closePopup'),
+                'Search Actions': allShortcuts.filter(s => s.id === 'executeSearch'),
+                'Other': allShortcuts.filter(s => !s.id.startsWith('savedSearch') && 
+                    s.id !== 'focusSearch' && 
+                    s.id !== 'closePopup' && 
+                    s.id !== 'executeSearch')
+            };
+
+            let hasVisibleContent = false;
+
+            for (const [category, shortcuts] of Object.entries(categories)) {
+                if (shortcuts.length === 0) continue;
+
+                const filteredShortcuts = shortcuts.filter(s => {
+                    if (!filter) return true;
+                    const searchStr = filter.toLowerCase();
+                    return s.displayName.toLowerCase().includes(searchStr) ||
+                           s.userCombo.toLowerCase().includes(searchStr) ||
+                           s.defaultCombo.toLowerCase().includes(searchStr);
+                });
+
+                if (filteredShortcuts.length === 0) continue;
+
+                hasVisibleContent = true;
+
+                const categorySection = document.createElement('div');
+                categorySection.style.marginBottom = '24px';
+
+                const categoryHeader = document.createElement('h3');
+                categoryHeader.style.cssText = `
+                    margin: 0 0 12px 0;
+                    font-size: 16px;
+                    color: #374151;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                `;
+
+                const categoryEmoji = category === 'Saved Searches' ? '💾' : 
+                                      category === 'Navigation' ? '🧭' :
+                                      category === 'Search Actions' ? '🔍' : '⚙️';
+                categoryHeader.innerText = `${categoryEmoji} ${category} (${filteredShortcuts.length})`;
+                categorySection.appendChild(categoryHeader);
+
+                const shortcutsGrid = document.createElement('div');
+                shortcutsGrid.style.cssText = `
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                    gap: 12px;
+                `;
+
+                filteredShortcuts.forEach(shortcut => {
+                    const shortcutCard = document.createElement('div');
+                    shortcutCard.style.cssText = `
+                        background: white;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 8px;
+                        padding: 16px;
+                        transition: all 0.2s ease;
+                        position: relative;
+                    `;
+
+                    if (shortcut.isCustom) {
+                        shortcutCard.style.borderColor = '#10b981';
+                        shortcutCard.style.boxShadow = '0 1px 3px rgba(16, 185, 129, 0.1)';
+                    }
+
+                    shortcutCard.addEventListener('mouseenter', function() {
+                        shortcutCard.style.boxShadow = shortcut.isCustom 
+                            ? '0 4px 12px rgba(16, 185, 129, 0.2)' 
+                            : '0 4px 12px rgba(0, 0, 0, 0.1)';
+                        shortcutCard.style.borderColor = shortcut.isCustom 
+                            ? '#10b981' 
+                            : '#667eea';
+                    });
+
+                    shortcutCard.addEventListener('mouseleave', function() {
+                        shortcutCard.style.boxShadow = shortcut.isCustom 
+                            ? '0 1px 3px rgba(16, 185, 129, 0.1)' 
+                            : 'none';
+                        shortcutCard.style.borderColor = shortcut.isCustom 
+                            ? '#10b981' 
+                            : '#e5e7eb';
+                    });
+
+                    const cardHeader = document.createElement('div');
+                    cardHeader.style.cssText = `
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        margin-bottom: 8px;
+                    `;
+
+                    const shortcutName = document.createElement('span');
+                    shortcutName.style.cssText = `
+                        font-weight: 600;
+                        color: #1f2937;
+                        font-size: 14px;
+                        flex: 1;
+                    `;
+                    shortcutName.innerText = shortcut.displayName;
+
+                    if (shortcut.isCustom) {
+                        const customBadge = document.createElement('span');
+                        customBadge.style.cssText = `
+                            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                            color: white;
+                            padding: 2px 8px;
+                            border-radius: 4px;
+                            font-size: 11px;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                        `;
+                        customBadge.innerText = 'Custom';
+                        cardHeader.appendChild(customBadge);
+                    }
+
+                    cardHeader.appendChild(shortcutName);
+
+                    const keyCombo = document.createElement('div');
+                    keyCombo.style.cssText = `
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                    `;
+
+                    const formattedCombo = formatCombo(shortcut.userCombo);
+                    formattedCombo.forEach(part => {
+                        const keyPart = document.createElement('span');
+                        keyPart.style.cssText = `
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            padding: 4px 8px;
+                            border-radius: 4px;
+                            font-family: monospace;
+                            font-weight: 600;
+                            font-size: 12px;
+                            box-shadow: 0 1px 2px rgba(102, 126, 234, 0.3);
+                        `;
+                        keyPart.innerText = part;
+                        keyCombo.appendChild(keyPart);
+                    });
+
+                    shortcutCard.appendChild(cardHeader);
+                    shortcutCard.appendChild(keyCombo);
+                    shortcutsGrid.appendChild(shortcutCard);
+                });
+
+                categorySection.appendChild(shortcutsGrid);
+                shortcutsHelpContent.appendChild(categorySection);
+            }
+
+            if (!hasVisibleContent) {
+                const noResults = document.createElement('div');
+                noResults.style.cssText = `
+                    text-align: center;
+                    padding: 40px 20px;
+                    color: #6b7280;
+                    font-size: 14px;
+                `;
+                noResults.innerHTML = '🔍 No shortcuts found matching your search';
+                shortcutsHelpContent.appendChild(noResults);
+            }
+        }
+
+        function filterShortcutsHelp(filter) {
+            renderShortcutsHelp(filter);
+        }
+
+        // ==================================================================
+        // END KEYBOARD SHORTCUTS HELP MODAL
         // ==================================================================
 
         let currentEditPresetId = null;
