@@ -299,8 +299,247 @@
         "long": "EgIYAg%253D%253D"        // Over 20 minutes
     };
 
-    // Storage key for saved searches in localStorage
-    const STORAGE_KEY = 'advancedYoutubeSearches';
+    // Quick Filter Presets - constant array for easy maintenance and addition
+    const QUICK_FILTER_PRESETS = [
+        {
+            id: 'hd-4k',
+            name: 'HD 4K',
+            description: 'High quality videos over 20 minutes',
+            icon: '🎬',
+            category: 'Quality',
+            keyboardShortcut: 'Alt+Q',
+            parameters: {
+                videoLength: 'long',
+                notes: 'Filter for HD/4K content (note: YouTube HD filtering requires sp parameter)'
+            }
+        },
+        {
+            id: 'this-week',
+            name: 'This Week',
+            description: 'Videos from the past 7 days',
+            icon: '📅',
+            category: 'Date',
+            keyboardShortcut: 'Alt+W',
+            parameters: {
+                dateRange: 'this_week',
+                notes: 'Filter to videos uploaded in the last 7 days'
+            }
+        },
+        {
+            id: 'popular',
+            name: 'Popular',
+            description: 'Sort by view count',
+            icon: '🔥',
+            category: 'Sorting',
+            keyboardShortcut: 'Alt+P',
+            parameters: {
+                sortBy: 'view_count',
+                spParam: 'CAM%253D',
+                notes: 'Sort results by view count (Popularity)'
+            }
+        },
+        {
+            id: 'recent',
+            name: 'Recent',
+            description: 'Sort by upload date',
+            icon: '🕐',
+            category: 'Sorting',
+            keyboardShortcut: 'Alt+R',
+            parameters: {
+                sortBy: 'date',
+                spParam: 'CAI%253D',
+                notes: 'Sort results by upload date'
+            }
+        },
+        {
+            id: 'hd-only',
+            name: 'HD Only',
+            description: 'High definition quality videos',
+            icon: '✨',
+            category: 'Quality',
+            keyboardShortcut: 'Alt+H',
+            parameters: {
+                notes: 'Filter for HD content (note: YouTube HD filtering requires sp parameter)'
+            }
+        },
+        {
+            id: 'shorts',
+            name: 'Shorts',
+            description: 'Videos under 4 minutes',
+            icon: '⚡',
+            category: 'Duration',
+            keyboardShortcut: 'Alt+S',
+            parameters: {
+                videoLength: 'short',
+                notes: 'Filter for short-form content'
+            }
+        },
+        {
+            id: 'today',
+            name: 'Today',
+            description: 'Videos from the last 24 hours',
+            icon: '📆',
+            category: 'Date',
+            keyboardShortcut: 'Alt+T',
+            parameters: {
+                dateRange: 'today',
+                notes: 'Filter to videos uploaded today'
+            }
+        },
+        {
+            id: 'long-form',
+            name: 'Long Form',
+            description: 'Videos over 20 minutes',
+            icon: '📺',
+            category: 'Duration',
+            keyboardShortcut: 'Alt+L',
+            parameters: {
+                videoLength: 'long',
+                notes: 'Filter for in-depth, long-form content'
+            }
+        }
+    ];
+
+    // Helper function to get date range for preset
+    function getDateRangeForPreset(rangeType) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        switch(rangeType) {
+            case 'today':
+                return {
+                    dateAfter: today.toISOString().split('T')[0],
+                    dateBefore: today.toISOString().split('T')[0]
+                };
+            case 'this_week':
+                const weekAgo = new Date(today);
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                return {
+                    dateAfter: weekAgo.toISOString().split('T')[0],
+                    dateBefore: null
+                };
+            case 'this_month':
+                const monthAgo = new Date(today);
+                monthAgo.setDate(monthAgo.getDate() - 30);
+                return {
+                    dateAfter: monthAgo.toISOString().split('T')[0],
+                    dateBefore: null
+                };
+            default:
+                return { dateAfter: null, dateBefore: null };
+        }
+    }
+
+        // Storage key for saved searches in localStorage
+        const STORAGE_KEY = 'advancedYoutubeSearches';
+        // Storage key for custom presets in localStorage
+        const CUSTOM_PRESETS_KEY = 'advancedYoutubeCustomPresets';
+        // Storage key for active preset state in localStorage
+        const ACTIVE_PRESET_KEY = 'advancedYoutubeActivePreset';
+        // Storage key for preset version (for migration)
+        const PRESET_VERSION_KEY = 'advancedYoutubePresetVersion';
+        const CURRENT_PRESET_VERSION = '1.0.0';
+
+        // Load custom presets from localStorage
+        function getCustomPresets() {
+            try {
+                const stored = localStorage.getItem(CUSTOM_PRESETS_KEY);
+                if (!stored) {
+                    return [];
+                }
+
+                const presets = JSON.parse(stored);
+
+                // Validate preset data structure
+                if (!Array.isArray(presets)) {
+                    console.warn('Invalid custom presets data structure, resetting');
+                    return [];
+                }
+
+                // Filter out invalid presets
+                const validPresets = presets.filter(preset => {
+                    return preset &&
+                           typeof preset === 'object' &&
+                           typeof preset.name === 'string' &&
+                           typeof preset.description === 'string' &&
+                           typeof preset.id === 'string';
+                });
+
+                if (validPresets.length !== presets.length) {
+                    console.warn(`Filtered out ${presets.length - validPresets.length} invalid custom presets`);
+                    saveCustomPresets(validPresets);
+                }
+
+                return validPresets;
+            } catch (error) {
+                console.error('Failed to load custom presets:', error);
+                return [];
+            }
+        }
+
+        // Save custom presets to localStorage
+        function saveCustomPresets(customPresets) {
+            try {
+                localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(customPresets));
+                return true;
+            } catch (error) {
+                console.error('Failed to save custom presets:', error);
+                return false;
+            }
+        }
+
+        // Handle migration when adding new default presets in future versions
+        function handlePresetMigration() {
+            const currentVersion = localStorage.getItem(PRESET_VERSION_KEY);
+
+            // If this is a new installation or version has changed
+            if (!currentVersion || currentVersion !== CURRENT_PRESET_VERSION) {
+                console.log(`Migrating presets from ${currentVersion || 'none'} to ${CURRENT_PRESET_VERSION}`);
+
+                // Future migration logic can go here
+                // For example: merging new default presets, updating preset structure, etc.
+
+                // Update the version to current
+                localStorage.setItem(PRESET_VERSION_KEY, CURRENT_PRESET_VERSION);
+            }
+        }
+
+        // Get all presets (built-in + custom)
+        function getAllPresets() {
+            return [...QUICK_FILTER_PRESETS, ...getCustomPresets()];
+        }
+
+        // Add a new custom preset
+        function addCustomPreset(preset) {
+            const customPresets = getCustomPresets();
+            preset.id = 'custom_' + Date.now();
+            preset.isCustom = true;
+            customPresets.push(preset);
+            return saveCustomPresets(customPresets);
+        }
+
+        // Update an existing custom preset
+        function updateCustomPreset(presetId, updatedPreset) {
+            const customPresets = getCustomPresets();
+            const index = customPresets.findIndex(p => p.id === presetId);
+            if (index === -1) return false;
+
+            customPresets[index] = { ...customPresets[index], ...updatedPreset };
+            return saveCustomPresets(customPresets);
+        }
+
+        // Delete a custom preset
+        function deleteCustomPreset(presetId) {
+            const customPresets = getCustomPresets();
+            const filtered = customPresets.filter(p => p.id !== presetId);
+            if (filtered.length === customPresets.length) return false;
+            return saveCustomPresets(filtered);
+        }
+
+        // Reorder custom presets
+        function reorderCustomPresets(newOrder) {
+            return saveCustomPresets(newOrder);
+        }
 
     /**
      * Validate if localStorage is available and accessible
@@ -1032,6 +1271,192 @@
 
         popupDiv.appendChild(popupHeader);
 
+        // === Quick Filter Presets Section ===
+        const presetsContainer = document.createElement('div');
+        presetsContainer.id = 'aysPresetsContainer';
+        presetsContainer.style.backgroundColor = '#f8f9fa';
+        presetsContainer.style.borderBottom = '1px solid var(--ays-color-gray-300)';
+        presetsContainer.style.transition = 'all var(--ays-transition-base)';
+
+        // Presets Header with Toggle Button
+        const presetsHeader = document.createElement('div');
+        presetsHeader.style.display = 'flex';
+        presetsHeader.style.alignItems = 'center';
+        presetsHeader.style.justifyContent = 'space-between';
+        presetsHeader.style.padding = 'var(--ays-spacing-sm) var(--ays-spacing-md)';
+
+        const presetsTitle = document.createElement('span');
+        presetsTitle.innerText = 'Quick Filters';
+        presetsTitle.style.fontSize = 'var(--ays-font-size-sm)';
+        presetsTitle.style.fontWeight = 'var(--ays-font-weight-bold)';
+        presetsTitle.style.color = 'var(--ays-color-gray-700)';
+        presetsTitle.style.fontFamily = 'var(--ays-font-family)';
+
+        const presetsControls = document.createElement('div');
+        presetsControls.style.display = 'flex';
+        presetsControls.style.alignItems = 'center';
+        presetsControls.style.gap = '8px';
+
+        const togglePresetsBtn = document.createElement('button');
+        togglePresetsBtn.type = 'button';
+        togglePresetsBtn.id = 'aysTogglePresetsBtn';
+        togglePresetsBtn.innerHTML = '▲';
+        togglePresetsBtn.style.background = 'none';
+        togglePresetsBtn.style.border = 'none';
+        togglePresetsBtn.style.cursor = 'pointer';
+        togglePresetsBtn.style.fontSize = 'var(--ays-font-size-sm)';
+        togglePresetsBtn.style.color = 'var(--ays-color-gray-600)';
+        togglePresetsBtn.style.padding = '2px 6px';
+        togglePresetsBtn.style.transition = 'transform var(--ays-transition-fast)';
+        togglePresetsBtn.title = 'Toggle Quick Filters';
+
+        const managePresetsBtn = document.createElement('button');
+        managePresetsBtn.type = 'button';
+        managePresetsBtn.id = 'aysManagePresetsBtn';
+        managePresetsBtn.innerHTML = '⚙️';
+        managePresetsBtn.style.background = 'none';
+        managePresetsBtn.style.border = 'none';
+        managePresetsBtn.style.cursor = 'pointer';
+        managePresetsBtn.style.fontSize = 'var(--ays-font-size-sm)';
+        managePresetsBtn.style.color = 'var(--ays-color-gray-600)';
+        managePresetsBtn.style.padding = '2px 6px';
+        managePresetsBtn.style.transition = 'all var(--ays-transition-fast)';
+        managePresetsBtn.title = 'Manage Presets';
+
+        presetsControls.appendChild(togglePresetsBtn);
+        presetsControls.appendChild(managePresetsBtn);
+
+        presetsHeader.appendChild(presetsTitle);
+        presetsHeader.appendChild(presetsControls);
+        presetsContainer.appendChild(presetsHeader);
+
+        // Presets Bar Container (Scrollable)
+        const presetsBar = document.createElement('div');
+        presetsBar.id = 'aysPresetsBar';
+        presetsBar.style.display = 'flex';
+        presetsBar.style.gap = '8px';
+        presetsBar.style.padding = '10px var(--ays-spacing-md)';
+        presetsBar.style.overflowX = 'auto';
+        presetsBar.style.scrollbarWidth = 'thin';
+        presetsBar.style.scrollbarColor = 'var(--ays-color-gray-400) var(--ays-color-gray-200)';
+        presetsBar.style.transition = 'all var(--ays-transition-base)';
+
+        // Custom scrollbar styles for webkit browsers
+        const scrollbarStyle = document.createElement('style');
+        scrollbarStyle.textContent = `
+            #aysPresetsBar::-webkit-scrollbar {
+                height: 6px;
+            }
+            #aysPresetsBar::-webkit-scrollbar-track {
+                background: var(--ays-color-gray-200);
+                border-radius: 3px;
+            }
+            #aysPresetsBar::-webkit-scrollbar-thumb {
+                background: var(--ays-color-gray-400);
+                border-radius: 3px;
+            }
+            #aysPresetsBar::-webkit-scrollbar-thumb:hover {
+                background: var(--ays-color-gray-500);
+            }
+        `;
+        document.head.appendChild(scrollbarStyle);
+
+        // Create preset buttons
+        QUICK_FILTER_PRESETS.forEach(preset => {
+            const presetBtn = document.createElement('button');
+            presetBtn.type = 'button';
+            presetBtn.className = 'ays-preset-btn';
+            presetBtn.dataset.presetId = preset.id;
+            presetBtn.style.display = 'flex';
+            presetBtn.style.alignItems = 'center';
+            presetBtn.style.gap = '6px';
+            presetBtn.style.padding = '8px 14px';
+            presetBtn.style.border = '1px solid var(--ays-color-gray-300)';
+            presetBtn.style.borderRadius = '20px';
+            presetBtn.style.backgroundColor = 'var(--ays-color-white)';
+            presetBtn.style.cursor = 'pointer';
+            presetBtn.style.fontSize = 'var(--ays-font-size-sm)';
+            presetBtn.style.fontFamily = 'var(--ays-font-family)';
+            presetBtn.style.fontWeight = '500';
+            presetBtn.style.color = 'var(--ays-color-gray-700)';
+            presetBtn.style.transition = 'all var(--ays-transition-fast)';
+            presetBtn.style.whiteSpace = 'nowrap';
+            presetBtn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+            presetBtn.title = `${preset.name}: ${preset.description}`;
+
+            // Icon
+            const icon = document.createElement('span');
+            icon.innerText = preset.icon;
+            icon.style.fontSize = 'var(--ays-font-size-base)';
+
+            // Label
+            const label = document.createElement('span');
+            label.innerText = preset.name;
+
+            presetBtn.appendChild(icon);
+            presetBtn.appendChild(label);
+
+            // Hover effects
+            presetBtn.addEventListener('mouseenter', function() {
+                if (!presetBtn.classList.contains('ays-preset-active')) {
+                    presetBtn.style.backgroundColor = 'var(--ays-color-gray-50)';
+                    presetBtn.style.borderColor = 'var(--ays-color-gray-400)';
+                    presetBtn.style.transform = 'translateY(-1px)';
+                    presetBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.08)';
+                }
+            });
+
+            presetBtn.addEventListener('mouseleave', function() {
+                if (!presetBtn.classList.contains('ays-preset-active')) {
+                    presetBtn.style.backgroundColor = 'var(--ays-color-white)';
+                    presetBtn.style.borderColor = 'var(--ays-color-gray-300)';
+                    presetBtn.style.transform = 'translateY(0)';
+                    presetBtn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+                }
+            });
+
+            presetsBar.appendChild(presetBtn);
+        });
+
+        presetsContainer.appendChild(presetsBar);
+        popupDiv.appendChild(presetsContainer);
+
+        // Toggle functionality
+        let presetsExpanded = true;
+        togglePresetsBtn.addEventListener('click', function() {
+            presetsExpanded = !presetsExpanded;
+            if (presetsExpanded) {
+                presetsBar.style.display = 'flex';
+                presetsBar.style.opacity = '1';
+                presetsBar.style.padding = '10px var(--ays-spacing-md)';
+                togglePresetsBtn.innerHTML = '▲';
+                togglePresetsBtn.style.transform = 'rotate(0deg)';
+            } else {
+                presetsBar.style.display = 'none';
+                presetsBar.style.opacity = '0';
+                presetsBar.style.padding = '0';
+                togglePresetsBtn.innerHTML = '▼';
+                togglePresetsBtn.style.transform = 'rotate(0deg)';
+            }
+        });
+
+        // Add CSS styles for active state
+        const activePresetStyle = document.createElement('style');
+        activePresetStyle.textContent = `
+            .ays-preset-active {
+                background-color: var(--ays-color-primary) !important;
+                color: var(--ays-color-white) !important;
+                border-color: var(--ays-color-primary-dark) !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.15) !important;
+            }
+            .ays-preset-active:hover {
+                background-color: var(--ays-color-primary-dark) !important;
+                border-color: var(--ays-color-primary-dark) !important;
+            }
+        `;
+        document.head.appendChild(activePresetStyle);
+
         // Create the form container
         const formContainer = document.createElement('div');
         formContainer.style.padding = 'var(--ays-spacing-xl)';
@@ -1454,6 +1879,227 @@
             document.getElementById('dateAfter').value = config.dateAfter || '';
             document.getElementById('dateBefore').value = config.dateBefore || '';
         }
+
+        // === Quick Filter Presets Logic ===
+        let activePresetId = null;
+
+        /**
+         * Apply a quick filter preset to the search form
+         * @param {string} presetId - The ID of the preset to apply
+         */
+        function applyPreset(presetId) {
+            const preset = QUICK_FILTER_PRESETS.find(p => p.id === presetId);
+            if (!preset) {
+                console.error('Preset not found:', presetId);
+                return;
+            }
+
+            // Get current manual values (user input in the form)
+            const manualValues = {
+                regularSearch: document.getElementById('regularSearch').value.trim(),
+                exactTerm: document.getElementById('exactTerm').value.trim(),
+                excludeTerms: document.getElementById('excludeTerms').value.trim(),
+                titleIncludes: document.getElementById('titleIncludes').value.trim(),
+                videoLength: document.getElementById('videoLength').value,
+                dateAfter: document.getElementById('dateAfter').value,
+                dateBefore: document.getElementById('dateBefore').value
+            };
+
+            // Track which fields were manually filled (non-empty or not default)
+            const hasManualInput = {
+                regularSearch: manualValues.regularSearch !== '',
+                exactTerm: manualValues.exactTerm !== '',
+                excludeTerms: manualValues.excludeTerms !== '',
+                titleIncludes: manualValues.titleIncludes !== '',
+                videoLength: manualValues.videoLength !== 'any',
+                dateAfter: manualValues.dateAfter !== '',
+                dateBefore: manualValues.dateBefore !== ''
+            };
+
+            // Apply preset parameters, respecting manual input
+            const params = preset.parameters;
+
+            // Video Length - apply only if not manually set
+            if (params.videoLength && !hasManualInput.videoLength) {
+                document.getElementById('videoLength').value = params.videoLength;
+            }
+
+            // Date Range - apply only if not manually set
+            if (params.dateRange) {
+                const dateRange = getDateRangeForPreset(params.dateRange);
+                if (dateRange.dateAfter && !hasManualInput.dateAfter) {
+                    document.getElementById('dateAfter').value = dateRange.dateAfter;
+                }
+                if (dateRange.dateBefore && !hasManualInput.dateBefore) {
+                    document.getElementById('dateBefore').value = dateRange.dateBefore;
+                }
+            }
+
+            // SP Parameter for sorting - this would be used in URL generation
+            if (params.spParam) {
+                document.getElementById('spParam').value = params.spParam;
+            }
+
+            // Update active preset state
+            activePresetId = presetId;
+
+            // Save active preset to localStorage for persistence
+            localStorage.setItem(ACTIVE_PRESET_KEY, presetId);
+
+            // Update visual state of preset buttons
+            updatePresetButtonStates();
+
+            // Show toast notification
+            showToast(`Applied preset: ${preset.name}`, 'success');
+
+            // Update search preview to reflect active preset
+            updateSearchPreview();
+        }
+
+        /**
+         * Deactivate the current preset and reset to defaults
+         */
+        function deactivatePreset() {
+            if (!activePresetId) {
+                showToast('No active preset', 'info');
+                return;
+            }
+
+            // Reset video length to default
+            document.getElementById('videoLength').value = 'any';
+
+            // Clear date fields
+            document.getElementById('dateAfter').value = '';
+            document.getElementById('dateBefore').value = '';
+
+            // Clear sp parameter
+            const spParam = document.getElementById('spParam');
+            if (spParam) {
+                spParam.value = '';
+            }
+
+            // Clear active preset
+            activePresetId = null;
+
+            // Remove active preset from localStorage
+            localStorage.removeItem(ACTIVE_PRESET_KEY);
+
+            // Update visual state
+            updatePresetButtonStates();
+
+            // Show toast notification
+            showToast('Preset deactivated', 'info');
+
+            // Update search preview
+            updateSearchPreview();
+        }
+
+        /**
+         * Update the visual state of all preset buttons
+         */
+        function updatePresetButtonStates() {
+            const presetButtons = document.querySelectorAll('.ays-preset-btn');
+            presetButtons.forEach(btn => {
+                const btnPresetId = btn.dataset.presetId;
+                if (btnPresetId === activePresetId) {
+                    btn.classList.add('ays-preset-active');
+                } else {
+                    btn.classList.remove('ays-preset-active');
+                }
+            });
+        }
+
+        /**
+         * Update the search preview text to reflect active preset
+         */
+        function updateSearchPreview() {
+            const preview = document.getElementById('searchPreview');
+            if (!preview) return;
+
+            // Get current form values
+            const regularSearch = document.getElementById('regularSearch').value.trim();
+            const videoLength = document.getElementById('videoLength').value;
+            const dateAfter = document.getElementById('dateAfter').value;
+            const dateBefore = document.getElementById('dateBefore').value;
+
+            // Build preview text
+            let previewText = '';
+
+            if (activePresetId) {
+                const activePreset = QUICK_FILTER_PRESETS.find(p => p.id === activePresetId);
+                if (activePreset) {
+                    previewText += `📋 Active preset: ${activePreset.name} (${activePreset.description})`;
+                }
+            }
+
+            if (regularSearch) {
+                previewText += previewText ? '\n' : '';
+                previewText += `🔍 Searching for: ${regularSearch}`;
+            }
+
+            if (videoLength !== 'any') {
+                const lengthText = {
+                    'short': 'Short (<4 min)',
+                    'medium': 'Medium (4-20 min)',
+                    'long': 'Long (>20 min)'
+                }[videoLength] || videoLength;
+                previewText += previewText ? '\n' : '';
+                previewText += `⏱️ Length: ${lengthText}`;
+            }
+
+            if (dateAfter) {
+                previewText += previewText ? '\n' : '';
+                previewText += `📅 After: ${dateAfter}`;
+            }
+
+            if (dateBefore) {
+                previewText += previewText ? '\n' : '';
+                previewText += `📅 Before: ${dateBefore}`;
+            }
+
+            preview.innerText = previewText || 'Start typing to preview your search';
+        }
+
+        // Add preset button click handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            // Restore last active preset from localStorage
+            const savedActivePresetId = localStorage.getItem(ACTIVE_PRESET_KEY);
+            if (savedActivePresetId) {
+                const savedPreset = getAllPresets().find(p => p.id === savedActivePresetId);
+                if (savedPreset) {
+                    activePresetId = savedActivePresetId;
+                    setTimeout(() => {
+                        updatePresetButtonStates();
+                        updateSearchPreview();
+                    }, 100);
+                }
+            }
+
+            const presetButtons = document.querySelectorAll('.ays-preset-btn');
+            presetButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const presetId = this.dataset.presetId;
+
+                    // If clicking the active preset, deactivate it
+                    if (activePresetId === presetId) {
+                        deactivatePreset();
+                    } else {
+                        applyPreset(presetId);
+                    }
+                });
+            });
+
+            // Add input listeners to update preview when user manually changes values
+            const formInputs = ['regularSearch', 'exactTerm', 'excludeTerms', 'titleIncludes', 'videoLength', 'dateAfter', 'dateBefore'];
+            formInputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.addEventListener('input', function() {
+                        updateSearchPreview();
+                    });
+                }
+            });
+        });
 
         /**
          * Execute a saved search by loading it and submitting the form
@@ -2317,6 +2963,443 @@
                 document.getElementById('saveSearchName').value = '';
                 document.getElementById('saveSearchFolder').value = '';
                 animateModal(saveSearchModal, false);
+            }
+        });
+
+        // === Preset Management Modal ===
+        const managePresetsModal = document.createElement('div');
+        managePresetsModal.id = 'managePresetsModal';
+        managePresetsModal.style.position = 'fixed';
+        managePresetsModal.style.top = '0';
+        managePresetsModal.style.left = '0';
+        managePresetsModal.style.width = '100%';
+        managePresetsModal.style.height = '100%';
+        managePresetsModal.style.backgroundColor = 'var(--ays-glass-backdrop)';
+        managePresetsModal.style.backdropFilter = 'blur(8px)';
+        managePresetsModal.style.webkitBackdropFilter = 'blur(8px)';
+        managePresetsModal.style.zIndex = 'var(--ays-z-modal)';
+        managePresetsModal.style.display = 'none';
+        managePresetsModal.style.transition = 'opacity var(--ays-transition-slow)';
+
+        const presetModalContent = document.createElement('div');
+        presetModalContent.style.position = 'absolute';
+        presetModalContent.style.top = '50%';
+        presetModalContent.style.left = '50%';
+        presetModalContent.style.transform = 'translate(-50%, -50%)';
+        presetModalContent.style.backgroundColor = 'var(--ays-color-white)';
+        presetModalContent.style.borderRadius = 'var(--ays-radius-lg)';
+        presetModalContent.style.boxShadow = 'var(--ays-shadow-lg)';
+        presetModalContent.style.padding = 'var(--ays-spacing-2xl)';
+        presetModalContent.style.width = '700px';
+        presetModalContent.style.maxWidth = '90%';
+        presetModalContent.style.fontFamily = 'var(--ays-font-family)';
+        presetModalContent.style.maxHeight = '80vh';
+        presetModalContent.style.overflow = 'auto';
+
+        const presetModalTitle = document.createElement('h3');
+        presetModalTitle.innerText = 'Manage Presets';
+        presetModalTitle.style.marginTop = '0';
+        presetModalTitle.style.marginBottom = 'var(--ays-spacing-lg)';
+        presetModalTitle.style.fontSize = '20px';
+        presetModalTitle.style.color = '#333';
+        presetModalTitle.style.fontWeight = 'bold';
+
+        const presetModalButtons = document.createElement('div');
+        presetModalButtons.style.display = 'flex';
+        presetModalButtons.style.gap = '10px';
+        presetModalButtons.style.marginBottom = 'var(--ays-spacing-lg)';
+
+        const createPresetBtn = document.createElement('button');
+        createPresetBtn.type = 'button';
+        createPresetBtn.id = 'aysCreatePresetBtn';
+        createPresetBtn.innerHTML = '➕ Create New Preset';
+        createPresetBtn.style.flex = '1';
+        createPresetBtn.style.padding = '12px 16px';
+        createPresetBtn.style.backgroundColor = 'var(--ays-color-primary)';
+        createPresetBtn.style.color = '#fff';
+        createPresetBtn.style.border = 'none';
+        createPresetBtn.style.borderRadius = '6px';
+        createPresetBtn.style.cursor = 'pointer';
+        createPresetBtn.style.fontSize = '14px';
+        createPresetBtn.style.fontWeight = 'bold';
+        applyButtonStyle(createPresetBtn, 'var(--ays-color-primary)', '#0056b3');
+
+        const refreshPresetsBtn = document.createElement('button');
+        refreshPresetsBtn.type = 'button';
+        refreshPresetsBtn.id = 'aysRefreshPresetsBtn';
+        refreshPresetsBtn.innerHTML = '🔄 Refresh';
+        refreshPresetsBtn.style.flex = '1';
+        refreshPresetsBtn.style.padding = '12px 16px';
+        refreshPresetsBtn.style.backgroundColor = '#6c757d';
+        refreshPresetsBtn.style.color = '#fff';
+        refreshPresetsBtn.style.border = 'none';
+        refreshPresetsBtn.style.borderRadius = '6px';
+        refreshPresetsBtn.style.cursor = 'pointer';
+        refreshPresetsBtn.style.fontSize = '14px';
+        refreshPresetsBtn.style.fontWeight = 'bold';
+        applyButtonStyle(refreshPresetsBtn, '#6c757d', '#5a6268');
+
+        presetModalButtons.appendChild(createPresetBtn);
+        presetModalButtons.appendChild(refreshPresetsBtn);
+
+        const presetsListContainer = document.createElement('div');
+        presetsListContainer.id = 'aysPresetsList';
+        presetsListContainer.style.maxHeight = '400px';
+        presetsListContainer.style.overflowY = 'auto';
+        presetsListContainer.style.border = '1px solid #ddd';
+        presetsListContainer.style.borderRadius = '6px';
+        presetsListContainer.style.padding = '10px';
+        presetsListContainer.style.backgroundColor = '#f8f9fa';
+
+        const closePresetModalBtn = document.createElement('button');
+        closePresetModalBtn.type = 'button';
+        closePresetModalBtn.id = 'aysClosePresetModalBtn';
+        closePresetModalBtn.innerText = 'Close';
+        closePresetModalBtn.style.width = '100%';
+        closePresetModalBtn.style.padding = '12px';
+        closePresetModalBtn.style.border = 'none';
+        closePresetModalBtn.style.borderRadius = '6px';
+        closePresetModalBtn.style.backgroundColor = '#666';
+        closePresetModalBtn.style.color = '#fff';
+        closePresetModalBtn.style.cursor = 'pointer';
+        closePresetModalBtn.style.fontSize = '14px';
+        closePresetModalBtn.style.fontWeight = 'bold';
+        closePresetModalBtn.style.marginTop = 'var(--ays-spacing-lg)';
+        applyButtonStyle(closePresetModalBtn, '#666', '#555');
+
+        presetModalContent.appendChild(presetModalTitle);
+        presetModalContent.appendChild(presetModalButtons);
+        presetModalContent.appendChild(presetsListContainer);
+        presetModalContent.appendChild(closePresetModalBtn);
+        managePresetsModal.appendChild(presetModalContent);
+        document.body.appendChild(managePresetsModal);
+
+        let currentEditPresetId = null;
+
+        function refreshPresetsList() {
+            presetsListContainer.innerHTML = '';
+            const allPresets = getAllPresets();
+
+            if (allPresets.length === 0) {
+                const emptyState = document.createElement('div');
+                emptyState.style.padding = 'var(--ays-spacing-xl)';
+                emptyState.style.textAlign = 'center';
+                emptyState.style.color = 'var(--ays-color-gray-600)';
+                emptyState.innerText = 'No presets available. Click "Create New Preset" to get started.';
+                presetsListContainer.appendChild(emptyState);
+                return;
+            }
+
+            // Separate built-in and custom presets
+            const builtinPresets = allPresets.filter(p => !p.isCustom);
+            const customPresets = allPresets.filter(p => p.isCustom);
+
+            // Add built-in presets section
+            if (builtinPresets.length > 0) {
+                const builtinSection = document.createElement('div');
+                builtinSection.style.marginBottom = 'var(--ays-spacing-lg)';
+
+                const builtinHeader = document.createElement('div');
+                builtinHeader.style.backgroundColor = '#e74c3c';
+                builtinHeader.style.color = 'white';
+                builtinHeader.style.padding = '8px 12px';
+                builtinHeader.style.borderRadius = '4px';
+                builtinHeader.style.marginBottom = '8px';
+                builtinHeader.style.fontWeight = 'bold';
+                builtinHeader.style.fontSize = '14px';
+                builtinHeader.innerText = `Built-in Presets (${builtinPresets.length})`;
+                builtinSection.appendChild(builtinHeader);
+
+                builtinPresets.forEach(preset => {
+                    builtinSection.appendChild(createPresetItem(preset, false));
+                });
+
+                presetsListContainer.appendChild(builtinSection);
+            }
+
+            // Add custom presets section
+            if (customPresets.length > 0) {
+                const customSection = document.createElement('div');
+                customSection.style.marginBottom = 'var(--ays-spacing-lg)';
+
+                const customHeader = document.createElement('div');
+                customHeader.style.backgroundColor = '#28a745';
+                customHeader.style.color = 'white';
+                customHeader.style.padding = '8px 12px';
+                customHeader.style.borderRadius = '4px';
+                customHeader.style.marginBottom = '8px';
+                customHeader.style.fontWeight = 'bold';
+                customHeader.style.fontSize = '14px';
+                customHeader.innerText = `Custom Presets (${customPresets.length})`;
+                customSection.appendChild(customHeader);
+
+                customPresets.forEach((preset, index) => {
+                    customSection.appendChild(createPresetItem(preset, true, index));
+                });
+
+                presetsListContainer.appendChild(customSection);
+            }
+        }
+
+        function createPresetItem(preset, isCustom, index = 0) {
+            const presetItem = document.createElement('div');
+            presetItem.style.backgroundColor = '#fff';
+            presetItem.style.border = '1px solid #ddd';
+            presetItem.style.borderRadius = '6px';
+            presetItem.style.padding = '12px';
+            presetItem.style.marginBottom = '8px';
+            presetItem.style.transition = 'all 0.2s ease';
+
+            if (isCustom) {
+                presetItem.draggable = true;
+                presetItem.style.cursor = 'move';
+
+                presetItem.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', preset.id);
+                    presetItem.style.opacity = '0.5';
+                });
+
+                presetItem.addEventListener('dragend', () => {
+                    presetItem.style.opacity = '1';
+                });
+
+                presetItem.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    presetItem.style.backgroundColor = '#f0f0f0';
+                    presetItem.style.borderColor = 'var(--ays-color-primary)';
+                });
+
+                presetItem.addEventListener('dragleave', () => {
+                    presetItem.style.backgroundColor = '#fff';
+                    presetItem.style.borderColor = '#ddd';
+                });
+
+                presetItem.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    presetItem.style.backgroundColor = '#fff';
+                    presetItem.style.borderColor = '#ddd';
+
+                    const draggedId = e.dataTransfer.getData('text/plain');
+                    const targetId = preset.id;
+
+                    if (draggedId !== targetId) {
+                        const customPresets = getCustomPresets();
+                        const draggedIndex = customPresets.findIndex(p => p.id === draggedId);
+                        const targetIndex = customPresets.findIndex(p => p.id === targetId);
+
+                        if (draggedIndex !== -1 && targetIndex !== -1) {
+                            const [draggedPreset] = customPresets.splice(draggedIndex, 1);
+                            customPresets.splice(targetIndex, 0, draggedPreset);
+                            reorderCustomPresets(customPresets);
+                            refreshPresetsList();
+                            showToast('Preset reordered successfully', 'success');
+                        }
+                    }
+                });
+            }
+
+            const presetHeader = document.createElement('div');
+            presetHeader.style.display = 'flex';
+            presetHeader.style.justifyContent = 'space-between';
+            presetHeader.style.alignItems = 'center';
+            presetHeader.style.marginBottom = '8px';
+
+            const presetNameSection = document.createElement('div');
+            presetNameSection.style.display = 'flex';
+            presetNameSection.style.alignItems = 'center';
+            presetNameSection.style.gap = '8px';
+
+            const presetIcon = document.createElement('span');
+            presetIcon.innerText = preset.icon || '📋';
+            presetIcon.style.fontSize = '18px';
+
+            const presetName = document.createElement('span');
+            presetName.innerText = preset.name;
+            presetName.style.fontWeight = 'bold';
+            presetName.style.color = '#333';
+            presetName.style.fontSize = '16px';
+
+            presetNameSection.appendChild(presetIcon);
+            presetNameSection.appendChild(presetName);
+
+            const presetButtons = document.createElement('div');
+            presetButtons.style.display = 'flex';
+            presetButtons.style.gap = '6px';
+
+            if (isCustom) {
+                const editPresetBtn = document.createElement('button');
+                editPresetBtn.type = 'button';
+                editPresetBtn.innerHTML = '✏️';
+                editPresetBtn.style.padding = '6px 10px';
+                editPresetBtn.style.border = 'none';
+                editPresetBtn.style.borderRadius = '4px';
+                editPresetBtn.style.cursor = 'pointer';
+                editPresetBtn.style.backgroundColor = '#FFA500';
+                editPresetBtn.style.color = 'white';
+                editPresetBtn.style.fontSize = '14px';
+                editPresetBtn.style.transition = 'transform 0.1s ease';
+                editPresetBtn.title = 'Edit preset';
+                applyButtonStyle(editPresetBtn, '#FFA500', '#e69400');
+
+                const deletePresetBtn = document.createElement('button');
+                deletePresetBtn.type = 'button';
+                deletePresetBtn.innerHTML = '🗑️';
+                deletePresetBtn.style.padding = '6px 10px';
+                deletePresetBtn.style.border = 'none';
+                deletePresetBtn.style.borderRadius = '4px';
+                deletePresetBtn.style.cursor = 'pointer';
+                deletePresetBtn.style.backgroundColor = '#dc3545';
+                deletePresetBtn.style.color = 'white';
+                deletePresetBtn.style.fontSize = '14px';
+                deletePresetBtn.style.transition = 'transform 0.1s ease';
+                deletePresetBtn.title = 'Delete preset';
+                applyButtonStyle(deletePresetBtn, '#dc3545', '#c82333');
+
+                presetButtons.appendChild(editPresetBtn);
+                presetButtons.appendChild(deletePresetBtn);
+            } else {
+                const builtinLabel = document.createElement('span');
+                builtinLabel.innerText = 'Built-in';
+                builtinLabel.style.padding = '4px 8px';
+                builtinLabel.style.backgroundColor = '#e74c3c';
+                builtinLabel.style.borderRadius = '4px';
+                builtinLabel.style.fontSize = '12px';
+                builtinLabel.style.color = 'white';
+                builtinLabel.style.fontWeight = 'bold';
+                presetButtons.appendChild(builtinLabel);
+            }
+
+            presetHeader.appendChild(presetNameSection);
+            presetHeader.appendChild(presetButtons);
+
+            const presetDetails = document.createElement('div');
+            presetDetails.style.fontSize = '14px';
+            presetDetails.style.color = '#666';
+            presetDetails.style.paddingLeft = '28px';
+            presetDetails.style.marginTop = '8px';
+
+            let detailsText = preset.description;
+            if (preset.category) {
+                detailsText += ` • Category: ${preset.category}`;
+            }
+            if (preset.keyboardShortcut) {
+                detailsText += ` • Shortcut: ${preset.keyboardShortcut}`;
+            }
+
+            presetDetails.innerText = detailsText;
+
+            presetItem.appendChild(presetHeader);
+            presetItem.appendChild(presetDetails);
+
+            if (isCustom) {
+                editPresetBtn.addEventListener('click', () => {
+                    currentEditPresetId = preset.id;
+                    openPresetEditModal(preset);
+                });
+
+                deletePresetBtn.addEventListener('click', () => {
+                    if (confirm(`Are you sure you want to delete the preset "${preset.name}"?`)) {
+                        deleteCustomPreset(preset.id);
+                        refreshPresetsList();
+                        showToast('Preset deleted successfully', 'success');
+                    }
+                });
+            }
+
+            return presetItem;
+        }
+
+        function openPresetEditModal(preset) {
+            const newPresetName = prompt('Preset Name:', preset.name);
+            if (newPresetName === null || !newPresetName.trim()) {
+                showToast('Preset name is required', 'error');
+                return;
+            }
+
+            const newDescription = prompt('Description:', preset.description);
+            if (newDescription === null || !newDescription.trim()) {
+                showToast('Description is required', 'error');
+                return;
+            }
+
+            const newIcon = prompt('Icon (emoji):', preset.icon);
+            if (newIcon === null) {
+                return;
+            }
+
+            const updatedPreset = {
+                name: newPresetName.trim(),
+                description: newDescription.trim(),
+                icon: newIcon.trim() || '📋'
+            };
+
+            if (updateCustomPreset(preset.id, updatedPreset)) {
+                refreshPresetsList();
+                showToast('Preset updated successfully', 'success');
+            } else {
+                showToast('Failed to update preset', 'error');
+            }
+        }
+
+        function createPresetFromForm() {
+            const name = prompt('Preset Name:');
+            if (!name || !name.trim()) {
+                showToast('Preset name is required', 'error');
+                return;
+            }
+
+            const description = prompt('Description:');
+            if (!description || !description.trim()) {
+                showToast('Description is required', 'error');
+                return;
+            }
+
+            const icon = prompt('Icon (emoji):', '📋');
+            if (icon === null) {
+                return;
+            }
+
+            const newPreset = {
+                name: name.trim(),
+                description: description.trim(),
+                icon: icon?.trim() || '📋',
+                category: 'Custom',
+                keyboardShortcut: '',
+                parameters: {
+                    videoLength: document.getElementById('videoLength').value,
+                    dateAfter: document.getElementById('dateAfter').value,
+                    dateBefore: document.getElementById('dateBefore').value,
+                    notes: 'Custom preset created from current form values'
+                }
+            };
+
+            if (addCustomPreset(newPreset)) {
+                refreshPresetsList();
+                showToast('Preset created successfully', 'success');
+            } else {
+                showToast('Failed to create preset', 'error');
+            }
+        }
+
+        // Event listeners for preset management
+        const managePresetsBtn = document.getElementById('aysManagePresetsBtn');
+        if (managePresetsBtn) {
+            managePresetsBtn.addEventListener('click', () => {
+                managePresetsModal.style.display = 'block';
+                animateModal(managePresetsModal, true);
+                refreshPresetsList();
+            });
+        }
+
+        createPresetBtn.addEventListener('click', createPresetFromForm);
+        refreshPresetsBtn.addEventListener('click', refreshPresetsList);
+        closePresetModalBtn.addEventListener('click', () => {
+            animateModal(managePresetsModal, false);
+        });
+
+        managePresetsModal.addEventListener('click', (e) => {
+            if (e.target === managePresetsModal) {
+                animateModal(managePresetsModal, false);
             }
         });
 
