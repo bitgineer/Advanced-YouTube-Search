@@ -40,6 +40,13 @@ Welcome to **Advanced YouTube Search** – a powerful Tampermonkey script design
 - **Movable Popup**: Drag the advanced search form to any position on the screen for personalized accessibility.
 - **Toggleable Interface**: Easily show or hide the advanced search form with a single click.
 
+### 🎯 Date Preset Buttons
+- **Quick Date Filters**: Instantly apply common date ranges:
+  - **Last Hour**: Videos from the past hour
+  - **Today**: Videos from the past 24 hours
+  - **This Week**: Videos from the past 7 days
+  - **This Month**: Videos from the past 30 days
+
 ### 🎨 User-Friendly Interface
 - **Clean Design**: Seamlessly integrates with YouTube's interface without clutter.
 - **Responsive Layout**: Optimized for various screen sizes and devices.
@@ -161,6 +168,79 @@ Customize colors, fonts, or other styles by editing the corresponding CSS proper
 ### 4. Set Default Values
 
 Pre-fill search fields by setting default `value` attributes when creating input elements in the script.
+
+## 🔬 Advanced: YouTube Sort Operators
+
+### Understanding YouTube's `sp` Parameter
+
+YouTube uses a special **`sp`** parameter in URLs to control sorting and filtering of search results. This parameter is **base64-encoded binary data** that represents various filters and sort orders.
+
+### Available Sort Operators
+
+Although YouTube removed some sorting options from the UI (like "Sort by Upload Date" and "Sort by View Count"), **these features still work via URL parameters**:
+
+| Sort Type | sp Parameter | URL Encoded | Example URL |
+|-----------|--------------|-------------|-------------|
+| **Upload Date** | `sp=CAI=` | `sp=CAI%3D` | `https://www.youtube.com/results?search_query=test&sp=CAI%3D` |
+| **View Count** | `sp=CAM%3D` | `sp=CAM%253D` | `https://www.youtube.com/results?search_query=test&sp=CAM%253D` |
+| **Rating** | `sp=CAE%3D` | `sp=CAE%253D` | `https://www.youtube.com/results?search_query=test&sp=CAE%253D` |
+
+### How to Extract `sp` Values
+
+You can find the `sp` value for any filter combination directly from YouTube:
+
+1. Open [YouTube](https://www.youtube.com/) and perform a search
+2. Click the **Filters** button in the top-right
+3. Select your desired filters (upload date, duration, features, etc.)
+4. Look at the URL in your browser's address bar
+5. Copy the `sp` parameter value
+
+**Example URL after applying filters:**
+```
+https://www.youtube.com/results?search_query=python+tutorial&sp=CAISAhAB
+```
+
+### Technical Details
+
+The `sp` parameter structure:
+
+- **Format**: Base64-encoded binary data
+- **Structure**: 2-byte header + filter words
+- **Header**:
+  - First byte: Constant (`00010010`)
+  - Second byte: Filter counter + special filter toggle
+- **Filters**: 2-byte or 3-byte words representing different filter types
+
+### Common Filter Values
+
+| Filter Type | Values |
+|-------------|--------|
+| **Upload Date** | Last hour, Today, This week, This month, This year |
+| **Duration** | Under 4 min, 4-20 min, Over 20 min |
+| **Features** | Live, 4K, HD, Subtitles, 360°, VR180, HDR, 3D |
+| **Type** | Video, Channel, Playlist, Movie |
+
+### Implementation Notes
+
+- The `sp` parameter is **not officially documented** by YouTube
+- These parameters may change without notice
+- For production applications, consider using the official [YouTube Data API v3](https://developers.google.com/youtube/v3/docs/search/list) with the `order` parameter
+- This userscript currently implements date filtering using the `after:` and `before:` search operators, which are more reliable than `sp` parameters
+
+### Recent YouTube Changes (2025-2026)
+
+YouTube made significant changes to search filters:
+
+- **Removed**: "Sort By" → Renamed to **"Prioritize"**
+- **Removed**: "View Count" → Renamed to **"Popularity"**
+- **Removed UI options**: Sort by Upload Date, View Count, and Rating from the interface
+- **Still Working**: URL-based `sp` parameters continue to function
+
+### Sources
+
+- [SerpApi: Paginating, Sorting, and Filtering with the YouTube API](https://serpapi.com/blog/youtube-sp-filters-paginating-sorting-and-filtering-with-the-youtube-api/)
+- [ktsk.xyz: Decoding YouTube filters](https://ktsk.xyz/docs/programming/decoding-youtube-filters/)
+- [YouTube Data API v3 Documentation](https://developers.google.com/youtube/v3/docs/search/list)
 
 ## 🤝 Contributing
 
