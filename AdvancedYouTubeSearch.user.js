@@ -426,7 +426,7 @@
          * Get all shortcuts with user customizations applied
          */
         getAllShortcuts() {
-            const savedCustomizations = getFromStorage(KEYBOARD_SHORTCUTS_KEY, {});
+            const savedCustomizations = getCustomShortcuts();
             return this.defaults.map(shortcut => ({
                 ...shortcut,
                 userCombo: savedCustomizations[shortcut.actionId] || shortcut.userCombo
@@ -554,18 +554,18 @@
                 throw new Error('Shortcut conflicts with existing shortcut');
             }
 
-            const savedCustomizations = getFromStorage(KEYBOARD_SHORTCUTS_KEY, {});
+            const savedCustomizations = getCustomShortcuts();
             savedCustomizations[actionId] = combo;
-            saveToStorageByKey(KEYBOARD_SHORTCUTS_KEY, savedCustomizations);
+            saveCustomShortcuts(savedCustomizations);
         },
 
         /**
          * Reset a shortcut to default
          */
         resetShortcut(actionId) {
-            const savedCustomizations = getFromStorage(KEYBOARD_SHORTCUTS_KEY, {});
+            const savedCustomizations = getCustomShortcuts();
             delete savedCustomizations[actionId];
-            saveToStorageByKey(KEYBOARD_SHORTCUTS_KEY, savedCustomizations);
+            saveCustomShortcuts(savedCustomizations);
         },
 
         /**
@@ -767,6 +767,112 @@
         const CURRENT_PRESET_VERSION = '1.0.0';
         // Storage key for keyboard shortcuts customizations
         const KEYBOARD_SHORTCUTS_KEY = 'advancedYoutubeKeyboardShortcuts';
+        // Storage key for shortcuts version (for migration)
+        const SHORTCUTS_VERSION_KEY = 'advancedYoutubeShortcutsVersion';
+        const CURRENT_SHORTCUTS_VERSION = '1.0.0';
+
+        /**
+         * Validate keyboard shortcuts data structure
+         * @param {Object} shortcuts - The shortcuts object to validate
+         * @returns {boolean} True if valid, false otherwise
+         */
+        function isValidShortcutsData(shortcuts) {
+            if (!shortcuts || typeof shortcuts !== 'object') return false;
+
+            for (const actionId in shortcuts) {
+                const shortcut = shortcuts[actionId];
+                if (!shortcut || typeof shortcut !== 'object') return false;
+                if (typeof shortcut.key !== 'string' || !shortcut.key) return false;
+                if (!Array.isArray(shortcut.modifiers)) return false;
+                if (!shortcut.modifiers.every(m => ['ctrl', 'alt', 'shift', 'meta'].includes(m))) return false;
+            }
+
+            return true;
+        }
+
+        /**
+         * Load custom shortcuts with validation and migration
+         * @returns {Object} Validated custom shortcuts object
+         */
+        function getCustomShortcuts() {
+            try {
+                const stored = localStorage.getItem(KEYBOARD_SHORTCUTS_KEY);
+                if (!stored) {
+                    return {};
+                }
+
+                const shortcuts = JSON.parse(stored);
+
+                // Validate shortcuts data structure
+                if (!isValidShortcutsData(shortcuts)) {
+                    console.warn('Invalid keyboard shortcuts data structure, resetting');
+                    localStorage.removeItem(KEYBOARD_SHORTCUTS_KEY);
+                    return {};
+                }
+
+                return shortcuts;
+            } catch (error) {
+                console.error('Failed to load custom shortcuts:', error);
+                return {};
+            }
+        }
+
+        /**
+         * Save custom shortcuts to localStorage
+         * @param {Object} shortcuts - The shortcuts object to save
+         * @returns {boolean} True if successful, false otherwise
+         */
+        function saveCustomShortcuts(shortcuts) {
+            try {
+                localStorage.setItem(KEYBOARD_SHORTCUTS_KEY, JSON.stringify(shortcuts));
+                return true;
+            } catch (error) {
+                console.error('Failed to save custom shortcuts:', error);
+                return false;
+            }
+        }
+
+        /**
+         * Handle migration when shortcuts structure changes in future versions
+         */
+        function handleShortcutsMigration() {
+            const currentVersion = localStorage.getItem(SHORTCUTS_VERSION_KEY);
+
+            // If this is a new installation or version has changed
+            if (!currentVersion || currentVersion !== CURRENT_SHORTCUTS_VERSION) {
+                console.log(`Migrating shortcuts from ${currentVersion || 'none'} to ${CURRENT_SHORTCUTS_VERSION}`);
+
+                // Load existing custom shortcuts
+                const existingShortcuts = getCustomShortcuts();
+
+                // Future migration logic can go here, for example:
+                // - Renaming action IDs
+                // - Restructuring shortcuts data
+                // - Removing deprecated shortcuts
+                // - Adding new default shortcuts
+                // - Converting old shortcut formats
+
+                // Example migration for future versions:
+                // if (currentVersion === '1.0.0' && CURRENT_SHORTCUTS_VERSION === '1.1.0') {
+                //     existingShortcuts['newActionId'] = existingShortcuts['oldActionId'];
+                //     delete existingShortcuts['oldActionId'];
+                // }
+
+                // Re-validate and save migrated shortcuts
+                if (Object.keys(existingShortcuts).length > 0) {
+                    if (isValidShortcutsData(existingShortcuts)) {
+                        saveCustomShortcuts(existingShortcuts);
+                        console.log('Shortcuts migrated successfully');
+                    } else {
+                        console.warn('Shortcuts migration failed validation, resetting to defaults');
+                        localStorage.removeItem(KEYBOARD_SHORTCUTS_KEY);
+                    }
+                }
+
+                // Update the version to current
+                localStorage.setItem(SHORTCUTS_VERSION_KEY, CURRENT_SHORTCUTS_VERSION);
+            }
+        }
 
         // Load custom presets from localStorage
         function getCustomPresets() {
@@ -4565,6 +4671,10 @@
         }, { passive: false });
 
     }
+
+    // Initialize migrations for shortcuts and presets
+    handleShortcutsMigration();
+    handlePresetMigration();
 
     // Initialize the script by injecting the popup
     waitForElement('body', function() {
