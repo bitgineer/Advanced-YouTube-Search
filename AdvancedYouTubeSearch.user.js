@@ -1566,7 +1566,37 @@
         popupHeader.style.fontSize = 'var(--ays-font-size-lg)';
         popupHeader.style.fontWeight = 'var(--ays-font-weight-bold)';
         popupHeader.style.fontFamily = 'var(--ays-font-family)';
-        popupHeader.innerText = 'Advanced YouTube Search';
+        popupHeader.style.display = 'flex';
+        popupHeader.style.alignItems = 'center';
+        popupHeader.style.justifyContent = 'space-between';
+
+        const popupTitle = document.createElement('span');
+        popupTitle.innerText = 'Advanced YouTube Search';
+
+        const keyboardShortcutsBtn = document.createElement('button');
+        keyboardShortcutsBtn.type = 'button';
+        keyboardShortcutsBtn.innerHTML = '⌨️';
+        keyboardShortcutsBtn.style.background = 'none';
+        keyboardShortcutsBtn.style.border = 'none';
+        keyboardShortcutsBtn.style.cursor = 'pointer';
+        keyboardShortcutsBtn.style.fontSize = '14px';
+        keyboardShortcutsBtn.style.color = 'white';
+        keyboardShortcutsBtn.style.padding = '2px 8px';
+        keyboardShortcutsBtn.style.transition = 'all 0.2s ease';
+        keyboardShortcutsBtn.title = 'Keyboard Shortcuts Settings';
+
+        keyboardShortcutsBtn.addEventListener('mouseenter', function() {
+            keyboardShortcutsBtn.style.opacity = '0.8';
+            keyboardShortcutsBtn.style.transform = 'scale(1.1)';
+        });
+
+        keyboardShortcutsBtn.addEventListener('mouseleave', function() {
+            keyboardShortcutsBtn.style.opacity = '1';
+            keyboardShortcutsBtn.style.transform = 'scale(1)';
+        });
+
+        popupHeader.appendChild(popupTitle);
+        popupHeader.appendChild(keyboardShortcutsBtn);
 
         popupDiv.appendChild(popupHeader);
 
@@ -3372,6 +3402,319 @@
         presetModalContent.appendChild(closePresetModalBtn);
         managePresetsModal.appendChild(presetModalContent);
         document.body.appendChild(managePresetsModal);
+
+        // ==================================================================
+        // KEYBOARD SHORTCUTS SETTINGS MODAL
+        // ==================================================================
+
+        const keyboardShortcutsModal = document.createElement('div');
+        keyboardShortcutsModal.id = 'keyboardShortcutsModal';
+        keyboardShortcutsModal.style.position = 'fixed';
+        keyboardShortcutsModal.style.top = '0';
+        keyboardShortcutsModal.style.left = '0';
+        keyboardShortcutsModal.style.width = '100%';
+        keyboardShortcutsModal.style.height = '100%';
+        keyboardShortcutsModal.style.backgroundColor = 'var(--ays-glass-backdrop)';
+        keyboardShortcutsModal.style.backdropFilter = 'blur(8px)';
+        keyboardShortcutsModal.style.webkitBackdropFilter = 'blur(8px)';
+        keyboardShortcutsModal.style.zIndex = 'var(--ays-z-modal)';
+        keyboardShortcutsModal.style.display = 'none';
+        keyboardShortcutsModal.style.transition = 'opacity var(--ays-transition-slow)';
+
+        const shortcutsModalContent = document.createElement('div');
+        shortcutsModalContent.style.position = 'absolute';
+        shortcutsModalContent.style.top = '50%';
+        shortcutsModalContent.style.left = '50%';
+        shortcutsModalContent.style.transform = 'translate(-50%, -50%)';
+        shortcutsModalContent.style.backgroundColor = 'var(--ays-color-white)';
+        shortcutsModalContent.style.borderRadius = 'var(--ays-radius-lg)';
+        shortcutsModalContent.style.boxShadow = 'var(--ays-shadow-lg)';
+        shortcutsModalContent.style.padding = 'var(--ays-spacing-2xl)';
+        shortcutsModalContent.style.width = '700px';
+        shortcutsModalContent.style.maxWidth = '90%';
+        shortcutsModalContent.style.maxHeight = '80vh';
+        shortcutsModalContent.style.overflow = 'auto';
+        shortcutsModalContent.style.fontFamily = 'var(--ays-font-family)';
+
+        const shortcutsModalTitle = document.createElement('h3');
+        shortcutsModalTitle.innerText = 'Keyboard Shortcuts Settings';
+        shortcutsModalTitle.style.marginTop = '0';
+        shortcutsModalTitle.style.marginBottom = 'var(--ays-spacing-lg)';
+        shortcutsModalTitle.style.fontSize = '20px';
+        shortcutsModalTitle.style.color = '#333';
+        shortcutsModalTitle.style.fontWeight = 'bold';
+
+        const shortcutsHelpText = document.createElement('div');
+        shortcutsHelpText.style.padding = 'var(--ays-spacing-sm)';
+        shortcutsHelpText.style.marginBottom = 'var(--ays-spacing-lg)';
+        shortcutsHelpText.style.backgroundColor = '#f8f9fa';
+        shortcutsHelpText.style.borderRadius = 'var(--ays-radius-sm)';
+        shortcutsHelpText.style.border = '1px solid var(--ays-color-gray-300)';
+        shortcutsHelpText.style.fontSize = '14px';
+        shortcutsHelpText.style.color = '#555';
+        shortcutsHelpText.innerHTML = '💡 <strong>Tip:</strong> Click on any shortcut field to capture a new keybinding. Use modifier keys (Ctrl, Alt, Shift, Cmd) to create combinations. Press Escape to cancel key capture.';
+
+        shortcutsModalContent.appendChild(shortcutsModalTitle);
+        shortcutsModalContent.appendChild(shortcutsHelpText);
+
+        const shortcutsListContainer = document.createElement('div');
+        shortcutsListContainer.id = 'keyboardShortcutsList';
+        shortcutsListContainer.style.maxHeight = '400px';
+        shortcutsListContainer.style.overflowY = 'auto';
+        shortcutsListContainer.style.border = '1px solid #ddd';
+        shortcutsListContainer.style.borderRadius = '6px';
+        shortcutsListContainer.style.padding = '10px';
+        shortcutsListContainer.style.backgroundColor = '#f8f9fa';
+        shortcutsModalContent.appendChild(shortcutsListContainer);
+
+        const shortcutsModalButtons = document.createElement('div');
+        shortcutsModalButtons.style.display = 'flex';
+        shortcutsModalButtons.style.gap = '10px';
+        shortcutsModalButtons.style.marginTop = 'var(--ays-spacing-lg)';
+
+        const resetAllShortcutsBtn = document.createElement('button');
+        resetAllShortcutsBtn.type = 'button';
+        resetAllShortcutsBtn.innerText = 'Reset All to Defaults';
+        resetAllShortcutsBtn.style.flex = '1';
+        resetAllShortcutsBtn.style.padding = '12px 16px';
+        resetAllShortcutsBtn.style.backgroundColor = '#6c757d';
+        resetAllShortcutsBtn.style.color = '#fff';
+        resetAllShortcutsBtn.style.border = 'none';
+        resetAllShortcutsBtn.style.borderRadius = '6px';
+        resetAllShortcutsBtn.style.cursor = 'pointer';
+        resetAllShortcutsBtn.style.fontSize = '14px';
+        resetAllShortcutsBtn.style.fontWeight = 'bold';
+        applyButtonStyle(resetAllShortcutsBtn, '#6c757d', '#5a6268');
+
+        const closeShortcutsModalBtn = document.createElement('button');
+        closeShortcutsModalBtn.type = 'button';
+        closeShortcutsModalBtn.innerText = 'Close';
+        closeShortcutsModalBtn.style.flex = '1';
+        closeShortcutsModalBtn.style.padding = '12px 16px';
+        closeShortcutsModalBtn.style.backgroundColor = 'var(--ays-color-primary)';
+        closeShortcutsModalBtn.style.color = '#fff';
+        closeShortcutsModalBtn.style.border = 'none';
+        closeShortcutsModalBtn.style.borderRadius = '6px';
+        closeShortcutsModalBtn.style.cursor = 'pointer';
+        closeShortcutsModalBtn.style.fontSize = '14px';
+        closeShortcutsModalBtn.style.fontWeight = 'bold';
+        applyButtonStyle(closeShortcutsModalBtn, 'var(--ays-color-primary)', '#0056b3');
+
+        shortcutsModalButtons.appendChild(resetAllShortcutsBtn);
+        shortcutsModalButtons.appendChild(closeShortcutsModalBtn);
+
+        shortcutsModalContent.appendChild(shortcutsModalButtons);
+        keyboardShortcutsModal.appendChild(shortcutsModalContent);
+        document.body.appendChild(keyboardShortcutsModal);
+
+        let currentCaptureActionId = null;
+        let isCapturingKey = false;
+
+        function refreshShortcutsList() {
+            shortcutsListContainer.innerHTML = '';
+            const shortcuts = KEYBOARD_SHORTCUTS.getAllShortcuts();
+
+            if (shortcuts.length === 0) {
+                const emptyState = document.createElement('div');
+                emptyState.style.padding = 'var(--ays-spacing-xl)';
+                emptyState.style.textAlign = 'center';
+                emptyState.style.color = 'var(--ays-color-gray-600)';
+                emptyState.innerText = 'No keyboard shortcuts configured.';
+                shortcutsListContainer.appendChild(emptyState);
+                return;
+            }
+
+            shortcuts.forEach(shortcut => {
+                const shortcutItem = document.createElement('div');
+                shortcutItem.style.backgroundColor = '#fff';
+                shortcutItem.style.border = '1px solid #ddd';
+                shortcutItem.style.borderRadius = '6px';
+                shortcutItem.style.padding = '12px';
+                shortcutItem.style.marginBottom = '8px';
+                shortcutItem.style.transition = 'all 0.2s ease';
+                shortcutItem.style.display = 'flex';
+                shortcutItem.style.justifyContent = 'space-between';
+                shortcutItem.style.alignItems = 'center';
+
+                const shortcutInfo = document.createElement('div');
+                shortcutInfo.style.flex = '1';
+
+                const shortcutName = document.createElement('div');
+                shortcutName.style.fontWeight = 'bold';
+                shortcutName.style.color = '#333';
+                shortcutName.style.fontSize = '16px';
+                shortcutName.style.marginBottom = '4px';
+                shortcutName.innerText = shortcut.displayName;
+
+                const shortcutCategory = document.createElement('div');
+                shortcutCategory.style.fontSize = '12px';
+                shortcutCategory.style.color = '#666';
+                
+                if (!shortcut.isCustomizable) {
+                    shortcutCategory.innerHTML = '🔒 Built-in (cannot customize)';
+                    shortcutCategory.style.color = '#999';
+                } else {
+                    shortcutCategory.innerHTML = '✏️ Customizable';
+                }
+
+                shortcutInfo.appendChild(shortcutName);
+                shortcutInfo.appendChild(shortcutCategory);
+
+                const shortcutControls = document.createElement('div');
+                shortcutControls.style.display = 'flex';
+                shortcutControls.style.alignItems = 'center';
+                shortcutControls.style.gap = '10px';
+
+                const activeCombo = KEYBOARD_SHORTCUTS.getActiveCombo(shortcut.actionId);
+                const comboDisplay = document.createElement('div');
+                comboDisplay.style.padding = '6px 12px';
+                comboDisplay.style.backgroundColor = '#f0f0f0';
+                comboDisplay.style.border = '1px solid #ccc';
+                comboDisplay.style.borderRadius = '4px';
+                comboDisplay.style.fontSize = '14px';
+                comboDisplay.style.fontFamily = 'monospace';
+                comboDisplay.style.fontWeight = 'bold';
+                comboDisplay.style.color = '#333';
+                comboDisplay.style.minWidth = '120px';
+                comboDisplay.style.textAlign = 'center';
+                comboDisplay.innerText = activeCombo ? KEYBOARD_SHORTCUTS.formatCombo(activeCombo) : 'None';
+
+                if (shortcut.isCustomizable) {
+                    comboDisplay.style.cursor = 'pointer';
+                    comboDisplay.style.transition = 'all 0.2s ease';
+
+                    comboDisplay.addEventListener('mouseenter', function() {
+                        if (!isCapturingKey) {
+                            comboDisplay.style.backgroundColor = '#e0e0e0';
+                            comboDisplay.style.borderColor = '#999';
+                        }
+                    });
+
+                    comboDisplay.addEventListener('mouseleave', function() {
+                        if (!isCapturingKey || currentCaptureActionId !== shortcut.actionId) {
+                            comboDisplay.style.backgroundColor = '#f0f0f0';
+                            comboDisplay.style.borderColor = '#ccc';
+                        }
+                    });
+
+                    comboDisplay.addEventListener('click', function() {
+                        if (isCapturingKey) {
+                            return;
+                        }
+                        startKeyCapture(shortcut.actionId, comboDisplay);
+                    });
+
+                    if (currentCaptureActionId === shortcut.actionId) {
+                        comboDisplay.style.backgroundColor = '#fff3cd';
+                        comboDisplay.style.borderColor = '#ffc107';
+                        comboDisplay.style.boxShadow = '0 0 0 3px rgba(255, 193, 7, 0.2)';
+                        comboDisplay.innerText = 'Press any key...';
+                    }
+                }
+
+                shortcutControls.appendChild(comboDisplay);
+
+                if (shortcut.isCustomizable && shortcut.userCombo) {
+                    const resetBtn = document.createElement('button');
+                    resetBtn.type = 'button';
+                    resetBtn.innerHTML = '↺';
+                    resetBtn.style.padding = '6px 12px';
+                    resetBtn.style.border = 'none';
+                    resetBtn.style.borderRadius = '4px';
+                    resetBtn.style.cursor = 'pointer';
+                    resetBtn.style.backgroundColor = '#dc3545';
+                    resetBtn.style.color = 'white';
+                    resetBtn.style.fontSize = '14px';
+                    resetBtn.style.transition = 'transform 0.1s ease';
+                    resetBtn.title = 'Reset to default';
+                    applyButtonStyle(resetBtn, '#dc3545', '#c82333');
+
+                    resetBtn.addEventListener('click', function() {
+                        KEYBOARD_SHORTCUTS.resetShortcut(shortcut.actionId);
+                        refreshShortcutsList();
+                        showToast('Shortcut reset to default', 'success');
+                    });
+
+                    shortcutControls.appendChild(resetBtn);
+                }
+
+                shortcutItem.appendChild(shortcutInfo);
+                shortcutItem.appendChild(shortcutControls);
+                shortcutsListContainer.appendChild(shortcutItem);
+            });
+        }
+
+        function startKeyCapture(actionId, displayElement) {
+            isCapturingKey = true;
+            currentCaptureActionId = actionId;
+            refreshShortcutsList();
+        }
+
+        function stopKeyCapture() {
+            isCapturingKey = false;
+            currentCaptureActionId = null;
+        }
+
+        function handleKeyCapture(event) {
+            if (!isCapturingKey || !currentCaptureActionId) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (event.key === 'Escape') {
+                stopKeyCapture();
+                refreshShortcutsList();
+                showToast('Key capture cancelled', 'info');
+                return;
+            }
+
+            const combo = KEYBOARD_SHORTCUTS.eventToCombo(event);
+
+            try {
+                KEYBOARD_SHORTCUTS.setCustomShortcut(currentCaptureActionId, combo);
+                stopKeyCapture();
+                refreshShortcutsList();
+                showToast('Shortcut updated successfully', 'success');
+            } catch (error) {
+                showToast(error.message, 'error', 3000);
+                stopKeyCapture();
+                refreshShortcutsList();
+            }
+        }
+
+        keyboardShortcutsModal.addEventListener('keydown', handleKeyCapture, { passive: false });
+
+        keyboardShortcutsBtn.addEventListener('click', () => {
+            keyboardShortcutsModal.style.display = 'block';
+            animateModal(keyboardShortcutsModal, true);
+            refreshShortcutsList();
+        });
+
+        closeShortcutsModalBtn.addEventListener('click', () => {
+            stopKeyCapture();
+            animateModal(keyboardShortcutsModal, false);
+        });
+
+        resetAllShortcutsBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset all keyboard shortcuts to their defaults?')) {
+                KEYBOARD_SHORTCUTS.resetAllShortcuts();
+                refreshShortcutsList();
+                showToast('All shortcuts reset to defaults', 'success');
+            }
+        });
+
+        keyboardShortcutsModal.addEventListener('click', (e) => {
+            if (e.target === keyboardShortcutsModal) {
+                stopKeyCapture();
+                animateModal(keyboardShortcutsModal, false);
+            }
+        });
+
+        // ==================================================================
+        // END KEYBOARD SHORTCUTS SETTINGS MODAL
+        // ==================================================================
 
         let currentEditPresetId = null;
 
