@@ -4,7 +4,7 @@ This phase implements a comprehensive keyboard shortcuts system with a settings 
 
 ## Tasks
 
-- [ ] Design keyboard shortcuts data structure and registry:
+- [x] Design keyboard shortcuts data structure and registry:
   - Create shortcuts registry mapping actions to key combinations
   - Define default shortcuts: Alt+1-9 for saved searches, Ctrl+K focus search, Escape close popup, Enter execute search
   - Structure each shortcut entry: actionId, displayName, defaultCombo, userCombo, isCustomizable

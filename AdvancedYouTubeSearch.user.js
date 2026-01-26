@@ -279,6 +279,258 @@
     // END CSS DESIGN SYSTEM
     // ==================================================================
 
+    // ==================================================================
+    // KEYBOARD SHORTCUTS REGISTRY SYSTEM
+    // ==================================================================
+
+    /**
+     * Keyboard Shortcuts Registry
+     * Manages all keyboard shortcuts with conflict detection and customization support
+     */
+    const KEYBOARD_SHORTCUTS = {
+        // Default shortcuts configuration
+        defaults: [
+            {
+                actionId: 'executeSavedSearch1',
+                displayName: 'Execute Saved Search 1',
+                defaultCombo: { key: '1', modifiers: ['alt'] },
+                userCombo: null,
+                isCustomizable: false
+            },
+            {
+                actionId: 'executeSavedSearch2',
+                displayName: 'Execute Saved Search 2',
+                defaultCombo: { key: '2', modifiers: ['alt'] },
+                userCombo: null,
+                isCustomizable: false
+            },
+            {
+                actionId: 'executeSavedSearch3',
+                displayName: 'Execute Saved Search 3',
+                defaultCombo: { key: '3', modifiers: ['alt'] },
+                userCombo: null,
+                isCustomizable: false
+            },
+            {
+                actionId: 'executeSavedSearch4',
+                displayName: 'Execute Saved Search 4',
+                defaultCombo: { key: '4', modifiers: ['alt'] },
+                userCombo: null,
+                isCustomizable: false
+            },
+            {
+                actionId: 'executeSavedSearch5',
+                displayName: 'Execute Saved Search 5',
+                defaultCombo: { key: '5', modifiers: ['alt'] },
+                userCombo: null,
+                isCustomizable: false
+            },
+            {
+                actionId: 'executeSavedSearch6',
+                displayName: 'Execute Saved Search 6',
+                defaultCombo: { key: '6', modifiers: ['alt'] },
+                userCombo: null,
+                isCustomizable: false
+            },
+            {
+                actionId: 'executeSavedSearch7',
+                displayName: 'Execute Saved Search 7',
+                defaultCombo: { key: '7', modifiers: ['alt'] },
+                userCombo: null,
+                isCustomizable: false
+            },
+            {
+                actionId: 'executeSavedSearch8',
+                displayName: 'Execute Saved Search 8',
+                defaultCombo: { key: '8', modifiers: ['alt'] },
+                userCombo: null,
+                isCustomizable: false
+            },
+            {
+                actionId: 'executeSavedSearch9',
+                displayName: 'Execute Saved Search 9',
+                defaultCombo: { key: '9', modifiers: ['alt'] },
+                userCombo: null,
+                isCustomizable: false
+            },
+            {
+                actionId: 'focusSearch',
+                displayName: 'Focus Search',
+                defaultCombo: { key: 'k', modifiers: ['ctrl'] },
+                userCombo: null,
+                isCustomizable: true
+            },
+            {
+                actionId: 'closePopup',
+                displayName: 'Close Popup',
+                defaultCombo: { key: 'Escape', modifiers: [] },
+                userCombo: null,
+                isCustomizable: true
+            },
+            {
+                actionId: 'executeSearch',
+                displayName: 'Execute Search',
+                defaultCombo: { key: 'Enter', modifiers: [] },
+                userCombo: null,
+                isCustomizable: true
+            }
+        ],
+
+        /**
+         * Get all shortcuts with user customizations applied
+         */
+        getAllShortcuts() {
+            const savedCustomizations = getFromStorage(KEYBOARD_SHORTCUTS_KEY, {});
+            return this.defaults.map(shortcut => ({
+                ...shortcut,
+                userCombo: savedCustomizations[shortcut.actionId] || shortcut.userCombo
+            }));
+        },
+
+        /**
+         * Get active combo for a specific action (user combo if set, otherwise default)
+         */
+        getActiveCombo(actionId) {
+            const shortcut = this.getAllShortcuts().find(s => s.actionId === actionId);
+            if (!shortcut) return null;
+            return shortcut.userCombo || shortcut.defaultCombo;
+        },
+
+        /**
+         * Find action associated with a keyboard event
+         */
+        findActionForEvent(event) {
+            const shortcuts = this.getAllShortcuts();
+            const eventCombo = this.eventToCombo(event);
+            
+            if (!eventCombo) return null;
+
+            return shortcuts.find(shortcut => {
+                const combo = shortcut.userCombo || shortcut.defaultCombo;
+                return combo.key.toLowerCase() === eventCombo.key.toLowerCase() &&
+                       this.arraysEqual(combo.modifiers, eventCombo.modifiers);
+            });
+        },
+
+        /**
+         * Convert keyboard event to combo object
+         */
+        eventToCombo(event) {
+            if (event.ctrlKey && event.key === 'k') {
+                return { key: 'k', modifiers: ['ctrl'] };
+            }
+
+            const modifiers = [];
+            if (event.ctrlKey) modifiers.push('ctrl');
+            if (event.altKey) modifiers.push('alt');
+            if (event.shiftKey) modifiers.push('shift');
+            if (event.metaKey) modifiers.push('meta');
+
+            return {
+                key: event.key,
+                modifiers: modifiers.sort()
+            };
+        },
+
+        /**
+         * Check if a combo conflicts with existing shortcuts
+         */
+        hasConflict(combo, excludeActionId = null) {
+            const shortcuts = this.getAllShortcuts();
+            
+            return shortcuts.some(shortcut => {
+                if (excludeActionId && shortcut.actionId === excludeActionId) return false;
+                
+                const existingCombo = shortcut.userCombo || shortcut.defaultCombo;
+                return existingCombo.key.toLowerCase() === combo.key.toLowerCase() &&
+                       this.arraysEqual(existingCombo.modifiers, combo.modifiers);
+            });
+        },
+
+        /**
+         * Validate a shortcut combo
+         */
+        isValidCombo(combo) {
+            if (!combo || !combo.key) return false;
+            
+            const validModifiers = ['ctrl', 'alt', 'shift', 'meta'];
+            if (!combo.modifiers.every(m => validModifiers.includes(m))) return false;
+            
+            return true;
+        },
+
+        /**
+         * Set user-defined shortcut for an action
+         */
+        setCustomShortcut(actionId, combo) {
+            if (!this.isValidCombo(combo)) {
+                throw new Error('Invalid shortcut combination');
+            }
+
+            const shortcut = this.defaults.find(s => s.actionId === actionId);
+            if (!shortcut) {
+                throw new Error('Action not found');
+            }
+
+            if (!shortcut.isCustomizable) {
+                throw new Error('This shortcut cannot be customized');
+            }
+
+            if (this.hasConflict(combo, actionId)) {
+                throw new Error('Shortcut conflicts with existing shortcut');
+            }
+
+            const savedCustomizations = getFromStorage(KEYBOARD_SHORTCUTS_KEY, {});
+            savedCustomizations[actionId] = combo;
+            saveToStorageByKey(KEYBOARD_SHORTCUTS_KEY, savedCustomizations);
+        },
+
+        /**
+         * Reset a shortcut to default
+         */
+        resetShortcut(actionId) {
+            const savedCustomizations = getFromStorage(KEYBOARD_SHORTCUTS_KEY, {});
+            delete savedCustomizations[actionId];
+            saveToStorageByKey(KEYBOARD_SHORTCUTS_KEY, savedCustomizations);
+        },
+
+        /**
+         * Reset all shortcuts to defaults
+         */
+        resetAllShortcuts() {
+            localStorage.removeItem(KEYBOARD_SHORTCUTS_KEY);
+        },
+
+        /**
+         * Helper to compare arrays
+         */
+        arraysEqual(a, b) {
+            if (a.length !== b.length) return false;
+            return a.every((val, i) => val === b[i]);
+        },
+
+        /**
+         * Format combo for display
+         */
+        formatCombo(combo) {
+            if (!combo) return '';
+            const modifierNames = {
+                ctrl: 'Ctrl',
+                alt: 'Alt',
+                shift: 'Shift',
+                meta: 'Cmd'
+            };
+            const modifierStr = combo.modifiers
+                .map(m => modifierNames[m] || m)
+                .join(' + ');
+            return modifierStr ? `${modifierStr} + ${combo.key}` : combo.key;
+        }
+    };
+
+    // ==================================================================
+    // END KEYBOARD SHORTCUTS REGISTRY SYSTEM
+    // ==================================================================
+
     // Wait until the YouTube page is fully loaded
     function waitForElement(selector, callback) {
         const observer = new MutationObserver((mutations, me) => {
@@ -439,6 +691,8 @@
         // Storage key for preset version (for migration)
         const PRESET_VERSION_KEY = 'advancedYoutubePresetVersion';
         const CURRENT_PRESET_VERSION = '1.0.0';
+        // Storage key for keyboard shortcuts customizations
+        const KEYBOARD_SHORTCUTS_KEY = 'advancedYoutubeKeyboardShortcuts';
 
         // Load custom presets from localStorage
         function getCustomPresets() {
@@ -716,6 +970,51 @@
      */
     function generateId() {
         return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    /**
+     * Generic storage helper: Get data from localStorage by key
+     * @param {string} key - The storage key
+     * @param {*} defaultValue - Default value if key doesn't exist
+     * @returns {*} The stored data or defaultValue
+     */
+    function getFromStorage(key, defaultValue = null) {
+        if (!isStorageAvailable()) {
+            return defaultValue;
+        }
+
+        try {
+            const stored = localStorage.getItem(key);
+            if (stored === null) {
+                return defaultValue;
+            }
+
+            return JSON.parse(stored);
+        } catch (error) {
+            console.error(`Error getting ${key} from storage:`, error);
+            return defaultValue;
+        }
+    }
+
+    /**
+     * Generic storage helper: Save data to localStorage by key
+     * @param {string} key - The storage key
+     * @param {*} data - The data to save
+     * @returns {boolean} True if successful, false otherwise
+     */
+    function saveToStorageByKey(key, data) {
+        if (!isStorageAvailable()) {
+            console.error('localStorage is not available');
+            return false;
+        }
+
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+            return true;
+        } catch (error) {
+            console.error(`Error saving ${key} to storage:`, error);
+            return false;
+        }
     }
 
     /**
